@@ -56,7 +56,7 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
             source_text = f"{prompt}: {source_text}"
         else:
             source_text = f"Left the SRT (SubRip Subtitle) file format unchangable translate following text to {target_language}: {source_text}"
-
+cd
         messages = [
                 ChatMessage(role="user", content=source_text)
         ]

@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+openai
+mistralai
+gtts
+moviepy
+pydub
+requests
+pytube3
+python-multipart

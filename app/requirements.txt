@@ -9,3 +9,4 @@ pydub
 requests
 pytube3
 python-multipart
+transformers

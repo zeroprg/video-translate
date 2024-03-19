@@ -1,25 +1,25 @@
 import os
-import tempfile
-from moviepy.editor import VideoFileClip, AudioFileClip, vfx
-from pydub import AudioSegment
-import logging 
+from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip, vfx
+import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO) # Set log level if needed
-from moviepy.editor import VideoFileClip, AudioFileClip
-from pydub import AudioSegment
-import os
-import tempfile
+logger.setLevel(logging.INFO)  # Set log level if needed
 
-from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip
-import os
-
-def split_audio_into_chunks(audio_clip, chunk_duration):
+def split_audio_into_chunks(audio_clip, chunk_duration, video_duration):
     """
     Split the audio clip into chunks of specified duration.
+    Adjust the speed of the audio if its total duration is longer than the video's duration.
     """
     audio_duration = audio_clip.duration
-    num_chunks = int(audio_duration // chunk_duration)
+    if audio_duration > video_duration:
+        # Calculate the speed change required to match the video duration
+        speed_change_factor = audio_duration / video_duration
+        # Apply the speed change
+        audio_clip = audio_clip.fx(vfx.speedx, speed_change_factor)
+        # Update the audio duration after the speed change
+        audio_duration = video_duration
+
+    num_chunks = int(audio_duration // chunk_duration) + (1 if audio_duration % chunk_duration else 0)
     chunks = []
     for i in range(num_chunks):
         start_time = i * chunk_duration
@@ -27,7 +27,7 @@ def split_audio_into_chunks(audio_clip, chunk_duration):
         chunk = audio_clip.subclip(start_time, end_time)
         chunks.append(chunk)
     return chunks
-    
+
 def replace_original_audio(video_path, translated_audio_path, chunk_duration=30, translations="translations"):
     try:
         logger.info(f"Replacing audio in video: {video_path}")
@@ -35,32 +35,19 @@ def replace_original_audio(video_path, translated_audio_path, chunk_duration=30,
 
         # Load the video
         video_clip = VideoFileClip(video_path)
+        video_duration = video_clip.duration
 
         # Load the translated audio
         translated_audio = AudioFileClip(translated_audio_path)
 
-        # Split the translated audio into chunks
-        audio_chunks = split_audio_into_chunks(translated_audio, chunk_duration)
+        # Split the translated audio into chunks, adjusting speed if necessary
+        audio_chunks = split_audio_into_chunks(translated_audio, chunk_duration, video_duration)
 
-        video_duration = video_clip.duration
-        # Ensure we do not create a video segment beyond the video's duration
-        num_segments = min(len(audio_chunks), int(video_duration // chunk_duration) + (1 if video_duration % chunk_duration else 0))
+        # Create video segments to match the audio chunks
+        video_segments = [video_clip.subclip(max(i * chunk_duration, 0), min((i + 1) * chunk_duration, video_duration)) for i in range(len(audio_chunks))]
 
-        # Adjust video segments creation to not exceed video duration
-        video_segments = []
-        for i in range(num_segments):
-            start_time = i * chunk_duration
-            end_time = min((i + 1) * chunk_duration, video_duration)
-            video_segment = video_clip.subclip(start_time, end_time)
-            video_segments.append(video_segment)
-
-        # Ensure each audio chunk does not exceed its corresponding video segment's duration
-        final_video_with_audio = []
-        for video_segment, audio_chunk in zip(video_segments, audio_chunks):
-            # Adjust audio chunk if necessary to fit video segment
-            if audio_chunk.duration > video_segment.duration:
-                audio_chunk = audio_chunk.subclip(0, video_segment.duration)
-            final_video_with_audio.append(video_segment.set_audio(audio_chunk))
+        # Combine the video segments with their corresponding adjusted audio chunks
+        final_video_with_audio = [video_segment.set_audio(audio_chunk) for video_segment, audio_chunk in zip(video_segments, audio_chunks)]
 
         # Concatenate all video segments with adjusted audio
         video_with_audio = concatenate_videoclips(final_video_with_audio)

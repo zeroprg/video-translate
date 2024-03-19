@@ -10,7 +10,46 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO) #Set log level if needed
 
-
+def translate_text_with_mixtral8(text_to_translate, target_language):
+    """
+    Translates a given text into the specified target language using the Mixtral-8 model,
+    deployed through Ollama and accessed via REST API.
+    
+    :param text_to_translate: The text to be translated.
+    :param target_language: The target language in English (e.g., "French", "Spanish").
+    :return: The translated text or None if the translation fails.
+    """
+    # The URL of the Ollama service deployed on a different machine
+    ollama_url = "http://192.168.0.110:11434/api/chat"
+    
+    # Construct the payload for the POST request
+    payload = {
+        "model": "openhermes2.5-mistral",  # Assuming Mixtral-8 is referred to by this model name
+        "messages": [{
+            "role": "user",
+            "content": f"Translate to {target_language} this text: {text_to_translate}"
+        }],
+        "stream": False
+    }
+    
+    # Make the POST request
+    try:
+        response = requests.post(ollama_url, json=payload)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Assuming the response contains the translated text in a JSON format
+            response_data = response.json()
+            # You'll need to adjust how you extract the translated text based on the actual response structure
+            translated_text = response_data.get('translated_text', None)  # Adjust this line based on actual response
+            return translated_text
+        else:
+            print(f"Failed to translate text. HTTP Status Code: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"An error occurred while attempting to contact the Ollama service: {e}")
+        return None
+        
 def openai_translate_text(source_text, target_language, api_key, prompt=None):    
     logging(source_text, target_language, api_key, prompt=None)
     try:
@@ -56,7 +95,7 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
             source_text = f"{prompt}: {source_text}"
         else:
             source_text = f"Left the SRT (SubRip Subtitle) file format unchangable translate following text to {target_language}: {source_text}"
-cd
+
         messages = [
                 ChatMessage(role="user", content=source_text)
         ]

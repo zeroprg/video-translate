@@ -1,5 +1,4 @@
 import os
-import logging
 from gtts import gTTS, lang
 from openai import OpenAI
 
@@ -7,8 +6,7 @@ from moviepy.editor import VideoFileClip, concatenate_audioclips
 from openai import OpenAI
 import re
 
-
-
+import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Set log level if needed
 

@@ -11,9 +11,9 @@ logger.setLevel(logging.DEBUG)  # Set log level if needed
 class AudioVideoTranslator:
     def __init__(self, video_path):
         self.video_path = video_path
-        self.audio_path = "../downloads/temp_audio.wav"
-        self.video = VideoFileClip(video_path)
-        self.video.audio.write_audiofile(self.audio_path)
+       # self.audio_path = "../downloads/temp_audio.wav"
+       # self.video = VideoFileClip(video_path)
+       # self.video.audio.write_audiofile(self.audio_path)
         self.segments = []
 
     def count_speakers(self):
@@ -42,54 +42,11 @@ class AudioVideoTranslator:
             self.segments[i] = (start, end, translated_audio_path)
 
     def translate_audio_chunk(self, audio_chunk, target_language):
-        # This method should implement speech-to-text, call translate_text_with_mixtral for translation,
+        # This method should implement speech-to-text, call translate_text_with_ollama for translation,
         # and then use text-to-speech to generate the translated audio, returning the path to the audio file.
         pass
 
-    def translate_text_with_mixtral(self, text_to_translate, target_language):
-        """
-        Translates a given text using the Mistral model from Ollama.
-
-        Args:
-            text_to_translate (str): The input text to be translated
-            target_language (str): The target language for translation
-
-        Returns:
-            str: The translated text or None if an error occurs.
-        """
-        ollama_url = "http://localhost:11434/api/chat"  # Replace this URL with the actual Ollama instance's URL
-
-        payload = {
-            "model": "openhermes2.5-mistral",
-            "messages": [{"role": "user", "content": f"Translate text to {target_language}: {text_to_translate}"}],
-            "stream": False
-        }
-
-        try:
-            start_time = time.time()
-            response = requests.post(ollama_url, json=payload)  # Make the request
-
-            elapsed_time = time.time() - start_time
-
-            if response.status_code == 200:
-                logger.debug(f"Received status code 200. Elapsed time for API call: {elapsed_time} seconds")
-
-                response_data = response.json()
-                print(response_data)
-                translated_text = response_data['message']['content'] if len(response_data) > 0 else None
-
-                if translated_text is not None:
-                    logger.debug(f"Text translated successfully. Translation: {translated_text}")
-                    return translated_text
-
-            else:
-                error_message = f"Failed to translate text. HTTP Status Code: {response.status_code}"
-                logger.warning(error_message)
-
-        except Exception as e:
-            logger.critical(f"An error occurred while attempting to contact the Ollama service: {e}")
-
-        return None
+ 
 
     def combine_audio_with_video(self):
         audio_clips = []
@@ -106,7 +63,14 @@ class AudioVideoTranslator:
 if __name__ == "__main__":
     translator = AudioVideoTranslator("../downloads/Истинный Смысл Матрицы. Наука, Религия и Философия в Матрице.mp4")
     # translate text remove it after testing:
-    result = translator.translate_text_with_mixtral("Hello world!!", "Russian")
+    result = translator.translate_text_with_ollama("Лишь довольно малое количество людей знают о том, что огромное количество кинематографических проектов брало за основу смыслы, истории, повествования и пророчества из различных религиозных традиций или, ушедших в прошлое, древних мифов. Не каждый догадывается что история из первого 'Терминатора' это переработанная древнегреческая легенда о Минотавре. Или то что за основу кодекса чести рыцарей - джедаев взят реально существовавший кодекс чести японских самураев, следовавших духовной традиции синтоизма. И, в этой статье, я собираюсь Вам поведать о религиозных смыслах ставшего уже классическим замечательного фильма 'Матрица' от уже бывших братьев Вачовски с Киану Ривзом и Лоуренсом Фишберном в главных ролях."+
+
+"Для начала, давайте разберёмся с понятием 'матрица', при чём здесь вообще религия и почему создатели фильма взяли в качестве наименования проекта именно это слово."+
+
+"Матрица имеет много значений. Она есть в искусстве, астрономии, физике, математике, программировании и, даже, в экономике. В искусстве это образец, модель, штамп, то что взято за основу первого творческого порыва художника. В физике матрица это конденсированная среда, в которую помещаются изолированные активные частицы, с целью предотвращения взаимодействия между собой и окружающей средой. В математике это прямоугольная таблица элементов некоторого кольца или поля. В программировании - двумерный массив. В экономике, по аналогии с математикой, это, опять же, таблицы. Но что объединяет эти разные, по значению, матрицы? Искусственно созданный мир. Пространство, на которое художник изливает свои фантазии и видение мира, баланс между различными частицами, блуждающими внутри этого искусственного мира, или таблица, имитирующая то что происходит в реальном мире и объясняющая принципы действия всех материальных вещей вокруг нас. Эти все разные принципы существуют в нашей жизни, окружают нас, и всё это было названо словом мир. словом вселенная. Ведь всё это так же временно как и любая матрица, а значит имеет и другую сторону медали, реальную и живую, подобно двумерной матрице в программировании. "  +
+
+"Пифия " + 
+"И, даже, не смотря на то что прорицательница Пифия, в исполнении Глории Фостер, в середине фильма определила что Нео вовсе не избранный, то, всё равно достаточно веры и сосредоточения на свете, исходящем изнутри. Ведь одно утверждение в этом мире, может иметь иной смысл в истинной реальности.", "English")
     print(f"Translated : {result}")
     result = translator.count_speakers()
     print(f"Speakers counted : {result}")

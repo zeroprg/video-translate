@@ -10,46 +10,58 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO) #Set log level if needed
 
-def translate_text_with_mixtral8(text_to_translate, target_language):
+def translate_text_with_ollama(self, text_to_translate, target_language, api_key = None, prompt = None):
     """
-    Translates a given text into the specified target language using the Mixtral-8 model,
-    deployed through Ollama and accessed via REST API.
-    
-    :param text_to_translate: The text to be translated.
-    :param target_language: The target language in English (e.g., "French", "Spanish").
-    :return: The translated text or None if the translation fails.
+    Translates a given text using the Mistral model from Ollama.
+
+    Args:
+        text_to_translate (str): The input text to be translated
+        target_language (str): The target language for translation
+
+    Returns:
+        str: The translated text or None if an error occurs.
     """
-    # The URL of the Ollama service deployed on a different machine
-    ollama_url = "http://192.168.0.110:11434/api/chat"
-    
-    # Construct the payload for the POST request
+    ollama_url = "http://localhost:11434/api/chat"  # Replace this URL with the actual Ollama instance's URL
+
+    # Construct the translation prompt
+    if prompt:
+        translation_prompt = f"{prompt}: {source_text}"
+    else:
+        translation_prompt = f"Translate the following text to {target_language}: {source_text} . Return only translated text"
+
     payload = {
-        "model": "openhermes2.5-mistral",  # Assuming Mixtral-8 is referred to by this model name
-        "messages": [{
-            "role": "user",
-            "content": f"Translate to {target_language} this text: {text_to_translate}"
-        }],
+        "model": "llama2",
+        "messages": [{"role": "user", "content": translation_prompt}],
         "stream": False
     }
-    
-    # Make the POST request
+
     try:
-        response = requests.post(ollama_url, json=payload)
-        
-        # Check if the request was successful
+        start_time = time.time()
+        response = requests.post(ollama_url, json=payload)  # Make the request
+
+        elapsed_time = time.time() - start_time
+
         if response.status_code == 200:
-            # Assuming the response contains the translated text in a JSON format
+            logger.debug(f"Received status code 200. Elapsed time for API call: {elapsed_time} seconds")
+
             response_data = response.json()
-            # You'll need to adjust how you extract the translated text based on the actual response structure
-            translated_text = response_data.get('translated_text', None)  # Adjust this line based on actual response
-            return translated_text
+            #print(response_data)
+            translated_text = response_data['message']['content'] if len(response_data) > 0 else None
+
+            if translated_text is not None:
+                logger.debug(f"Text translated successfully. Translation: {translated_text}")
+                return translated_text
+
         else:
-            print(f"Failed to translate text. HTTP Status Code: {response.status_code}")
-            return None
+            error_message = f"Failed to translate text. HTTP Status Code: {response.status_code}"
+            logger.warning(error_message)
+
     except Exception as e:
-        print(f"An error occurred while attempting to contact the Ollama service: {e}")
-        return None
-        
+        logger.critical(f"An error occurred while attempting to contact the Ollama service: {e}")
+
+    return None
+
+
 def openai_translate_text(source_text, target_language, api_key, prompt=None):    
     logging(source_text, target_language, api_key, prompt=None)
     try:
@@ -113,7 +125,7 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
         logger.error(f"Error translating text with MistralAI: {e}")
         return None
 
-def translate_api(text, target_language, api_key, translation_function, prompt=None,TEXT_PORTIONS = 3500 ):
+def translate_api(text, target_language, api_key, translation_function, prompt=None,TEXT_PORTIONS = 2500 ):
 
     translated_text_parts = []
     current_part_tokens = 0
@@ -155,7 +167,7 @@ def translate_api(text, target_language, api_key, translation_function, prompt=N
     translated_text = '\n'.join(translated_text_parts)
     return translated_text
 
-def translate_text(source_text, target_language, openai_key, mistralai_key, prompt=None, audio_path=None):
+def translate_text(source_text, target_language, openai_key=None, mistralai_key=None, prompt=None, audio_path=None):
     # Check if a corresponding text file already exists
     if audio_path is not None:
         # Convert to absolute path
@@ -168,8 +180,15 @@ def translate_text(source_text, target_language, openai_key, mistralai_key, prom
             logger.info(f"Translated text loaded from file: {text_filename}")
             return translated_text
 
-    translation_function = openai_translate_text
-    api_key = openai_key
+    if openai_key is not None:
+        translation_function = openai_translate_text
+        api_key = openai_key
+    elif mistralai_key is not None:
+        translation_function = mistralai_translate_text
+        api_key = mistralai_key
+    else: 
+        translation_function = translate_text_with_ollama
+        api_key = None
 
     # Perform translation using the selected translation function
     translated_text = translate_api(source_text, target_language, api_key, translation_function, prompt)

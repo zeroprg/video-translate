@@ -1,6 +1,5 @@
 import os
 from gtts import gTTS, lang
-from openai import OpenAI
 
 from moviepy.editor import VideoFileClip, concatenate_audioclips
 from openai import OpenAI
@@ -142,6 +141,24 @@ def insert_pause(chunk):
     """
     return chunk.replace('DYNAMIC MUSIC', ' [PAUSE:10] ')
 
+
+def synthesize_audio_local(translated_text, target_language, translations="translations", api_key=None, simulate_male_voice=False):
+
+    client = OpenAI(
+    # This part is not needed if you set these environment variables before import openai
+    # export OPENAI_API_KEY=sk-11111111111
+    # export OPENAI_BASE_URL=http://localhost:8000/v1
+    api_key = "sk-111111111",
+    base_url = "http://localhost:8000/v1",
+    )
+
+    with client.audio.speech.with_streaming_response.create(
+    model="tts-1",
+    voice="alloy",
+    input=translated_text
+    ) as response:
+        response.stream_to_file("speech.mp3")
+
 def synthesize_audio_openai(translated_text, target_language, translations="translations", api_key=None, simulate_male_voice=False):
     """
     Synthesize audio for the translated text.
@@ -152,13 +169,22 @@ def synthesize_audio_openai(translated_text, target_language, translations="tran
 
     try:
         # Initialize the OpenAI client
-        client = OpenAI(api_key=api_key)
+        if api_key is None : 
+                client = OpenAI(
+            # This part is not needed if you set these environment variables before import openai
+            # export OPENAI_API_KEY=sk-11111111111
+            # export OPENAI_BASE_URL=http://localhost:8000/v1
+                            api_key = "sk-111111111",
+                            base_url = "http://localhost:8000/v1",
+                            )
+        else:                    
+            client = OpenAI(api_key=api_key)
 
         # Set model parameter based on the target language
         model = 'tts-1'  # Adjust the model based on your preference
 
         # Set voice parameter based on voice type
-        voice = 'onyx' if simulate_male_voice else 'fable'  # Male voice if simulate_male_voice is True, else female voice
+        voice = 'fable' if simulate_male_voice else 'shimmer'  # Male voice if simulate_male_voice is True, else female voice
 
         # Split translated text into chunks
         text_chunks = split_text_into_chunks(translated_text)

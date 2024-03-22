@@ -2,6 +2,5 @@
 
 **/__pycache__/*
 *.wav
-app/utils/__pycache__/replace_original_audio.cpython-310.pyc
-app/utils/__pycache__/synthesize_audio.cpython-310.pyc
-app/utils/__pycache__/translate_text.cpython-310.pyc
+*.pyc
+

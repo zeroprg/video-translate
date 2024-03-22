@@ -1,5 +1,7 @@
 # translate.py
 import os
+import time
+import requests
 from openai import OpenAI
 from mistralai.client import MistralClient
 import re
@@ -8,9 +10,9 @@ from .tokenizer_limiter import read_approx_tokens, sent_tokenize, count_tokens
 
 import logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO) #Set log level if needed
+logger.setLevel(logging.DEBUG) #Set log level if needed
 
-def translate_text_with_ollama(self, text_to_translate, target_language, api_key = None, prompt = None):
+def translate_text_with_ollama(source_text, target_language, api_key = None, prompt = None):
     """
     Translates a given text using the Mistral model from Ollama.
 
@@ -21,8 +23,9 @@ def translate_text_with_ollama(self, text_to_translate, target_language, api_key
     Returns:
         str: The translated text or None if an error occurs.
     """
-    ollama_url = "http://localhost:11434/api/chat"  # Replace this URL with the actual Ollama instance's URL
 
+    ollama_url = "http://localhost:11434/api/chat"  # Replace this URL with the actual Ollama instance's URL
+    logging(source_text, target_language, api_key, prompt)
     # Construct the translation prompt
     if prompt:
         translation_prompt = f"{prompt}: {source_text}"
@@ -58,8 +61,8 @@ def translate_text_with_ollama(self, text_to_translate, target_language, api_key
 
     except Exception as e:
         logger.critical(f"An error occurred while attempting to contact the Ollama service: {e}")
-
-    return None
+        return None
+ 
 
 
 def openai_translate_text(source_text, target_language, api_key, prompt=None):    
@@ -122,10 +125,17 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
 
         return translated_text
     except Exception as e:
-        logger.error(f"Error translating text with MistralAI: {e}")
+        logger.error(f"Error translating text with MistralAI: {e}")       
         return None
 
-def translate_api(text, target_language, api_key, translation_function, prompt=None,TEXT_PORTIONS = 2500 ):
+
+translators_func= {
+    "openai_translate_text": openai_translate_text,
+    "translate_text_with_ollama": translate_text_with_ollama,
+    "mistralai_translate_text": mistralai_translate_text
+}
+
+def translate_api(text, target_language, api_key, translation_function, prompt=None,TEXT_PORTIONS =  230 ):
 
     translated_text_parts = []
     current_part_tokens = 0
@@ -144,11 +154,14 @@ def translate_api(text, target_language, api_key, translation_function, prompt=N
         # If adding this sentence would exceed the desired number of tokens, translate the current part
         if current_part_tokens > TEXT_PORTIONS:
             # Translate the current part using the specified translation function
+                        
             translated_part = translation_function(' '.join(current_part), target_language, api_key, prompt)
 
             # Append the translated part to the list if it's not None
             if translated_part is not None:
                 translated_text_parts.append(translated_part)
+            else:
+                return None
 
             # Reset the current part and token count
             current_part = [sentence]
@@ -167,8 +180,10 @@ def translate_api(text, target_language, api_key, translation_function, prompt=N
     translated_text = '\n'.join(translated_text_parts)
     return translated_text
 
-def translate_text(source_text, target_language, openai_key=None, mistralai_key=None, prompt=None, audio_path=None):
-    # Check if a corresponding text file already exists
+
+def translate_text(source_text, target_language, translators, prompt=None, audio_path=None):
+    translated_text = None
+     # Check if a corresponding text file already exists
     if audio_path is not None:
         # Convert to absolute path
         absolute_audio_path = os.path.abspath(audio_path)
@@ -178,26 +193,45 @@ def translate_text(source_text, target_language, openai_key=None, mistralai_key=
             with open(text_filename, "r", encoding="utf-8") as text_file:
                 translated_text = text_file.read()
             logger.info(f"Translated text loaded from file: {text_filename}")
-            return translated_text
 
-    if openai_key is not None:
-        translation_function = openai_translate_text
-        api_key = openai_key
-    elif mistralai_key is not None:
-        translation_function = mistralai_translate_text
-        api_key = mistralai_key
-    else: 
-        translation_function = translate_text_with_ollama
-        api_key = None
+    preper_to_delete = []        
 
-    # Perform translation using the selected translation function
-    translated_text = translate_api(source_text, target_language, api_key, translation_function, prompt)
+    for index, translator in enumerate(translators.values()):
+        logger.debug(f"translator : {translator}")
+        if "available" not in translator or not translator["available"]:
+            continue
+
+        api_key = translator.get("api_key")
+        translation_function = translator['function']
+        logger.debug(f"translation_function: {translation_function}")
+        logger.debug(f"translators_func: {translators_func[translation_function]}")
+        translation_function  = translators_func[translation_function]
+
+        try:
+            translated_text = translate_api(source_text, target_language, api_key, translation_function, prompt)
+        except Exception as e:
+            logger.warning(f"An error occurred while translating using {translator['name']}:{str(e)}.")
+            logger.info(f"Skipping the current translator, trying the next one...")
+                        # Remove translator record if error occurs
+            preper_to_delete.append(index)
+            continue
+
+        if translated_text is None or len(translated_text.strip()) == 0:  # Check if translation result is empty
+            logger.warning("Translation returned an empty result from the used translator.")  # Log a warning message in case of empty results
+            preper_to_delete.append(index)
+            continue
+ 
+        break   # Include 'break' statement outside the try block for successful translations without errors or empty results
+    try:
+        for delet_it_index in  preper_to_delete:
+            del translators[delet_it_index]
+    except Exception as e:
+        logger.warning(f"An error occurred while translating using {translator['name']}:{str(e)}.")
+        return None
 
     # Save translated text to file if audio_path is provided
-    if audio_path is not None:
-        # Convert to absolute path
+    if audio_path is not None and translated_text is not None:
         absolute_audio_path = os.path.abspath(audio_path)
-        # Writing the translated text to a file
         text_filename = os.path.splitext(absolute_audio_path)[0] + f" {target_language}.txt"
         with open(text_filename, "w", encoding="utf-8") as text_file:
             text_file.write(translated_text)

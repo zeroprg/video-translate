@@ -77,8 +77,12 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 #    openai_key = api_keys[user_id]["openai_key"]
 #    mistralai_key = api_keys[user_id]["mistralai_key"]
 
-    openai_key =  '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'
-    mistralai_key = 'BCI4GMNwnbZaEKcxjeEflPs5RamS1157'
+    translators = {
+        "Ollama": {"name": "ollama", "available": True, "function": "translate_text_with_ollama", "api_key": None, "model_name": "llama2"},
+        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": 'sk-***', "model_name": "davinci"},
+        "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": 'BCI4GMNwnbZaEKcxjeEflPs5RamS1157'}
+    }
+
     # Translate target_languages to English
     prompt = f"Please extract only the language names from the following text and provide them in English, separated by commas: {target_languages}"
     translated_target_languages = target_languages #translate_text(target_languages, "English", openai_key, mistralai_key, prompt = prompt)
@@ -97,8 +101,8 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     translated_videos = []
 
     for lang in cleaned_languages:
-        translated_text = translate_text(transcription, lang, openai_key, mistralai_key, prompt = None, audio_path = audio_path)
-        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=openai_key , simulate_male_voice=True)
+        translated_text = translate_text(transcription, lang, translators, prompt = None, audio_path = audio_path)
+        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=translators['OpenAI']['api_key'] , simulate_male_voice=True)
        
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
         translated_videos.append(translated_video_path)

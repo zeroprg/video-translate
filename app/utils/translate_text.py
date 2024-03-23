@@ -193,6 +193,7 @@ def translate_text(source_text, target_language, translators, prompt=None, audio
             with open(text_filename, "r", encoding="utf-8") as text_file:
                 translated_text = text_file.read()
             logger.info(f"Translated text loaded from file: {text_filename}")
+            return translated_text
 
     preper_to_delete = []        
 

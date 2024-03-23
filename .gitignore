@@ -1,6 +1,7 @@
 /venv
-
-**/__pycache__/*
+**/downloads
+/__pycache__
 *.wav
 *.pyc
-
+*.pyo
+*.mp4

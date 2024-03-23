@@ -193,7 +193,7 @@ def synthesize_audio_openai(translated_text, target_language, translations="tran
         audio_chunks = []
         for chunk in text_chunks:
             chunk_with_pause = insert_pause(chunk)
-            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause)
+            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause, speed = 0.9)
             audio_chunks.append(response.content)
 
         # Save the synthesized speech to an MP3 file

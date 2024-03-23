@@ -102,7 +102,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 
     for lang in cleaned_languages:
         translated_text = translate_text(transcription, lang, translators, prompt = None, audio_path = audio_path)
-        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=translators['OpenAI']['api_key'] , simulate_male_voice=True)
+        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=None , simulate_male_voice=True)
        
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
         translated_videos.append(translated_video_path)

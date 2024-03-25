@@ -205,5 +205,5 @@ if __name__ == "__main__":
     # Test your class implementation here - You may need to adjust the paths or add other test data based on your use case
     print("Input media:", audio_file_path, video_file_path)
     av._perform_audio_diarization()
-    av.merge_video_files("*_*.mp4")
+    av.merge_video_files("*.mp4")
 

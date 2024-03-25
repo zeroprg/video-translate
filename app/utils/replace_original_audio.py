@@ -28,6 +28,32 @@ def split_audio_into_chunks(audio_clip, chunk_duration, video_duration):
         chunks.append(chunk)
     return chunks
 
+def replace_original_audio_intime_range(video_clip, audio, start_time, end_time, output_path = "./translations"):
+    """
+    Replace the audio of the video clip with the audio from the given path
+    for the specified time range and save the result to the output path.
+    """
+    try:
+        logger.info(f"Replacing audio in video: {video_clip.filename}")
+        logger.info(f"Audio path: {audio_path}")
+        logger.info(f"Time range: {start_time}-{end_time}")
+
+        # Load the audio clip
+        if audio is  not AudioFileClip:
+            audio = AudioFileClip(audio_path) 
+              
+        new_subclip = video_clip.subclip(t_start=start_time, t_end=end_time).set_audio(audio)
+
+        # Save the video with the new audio
+        new_subclip.write_videofile(output_path, codec="libx264", audio_codec="aac")
+
+        logger.info(f"Video with new audio saved to: {output_path}")
+
+        return output_path
+    except Exception as e:
+        logger.error(f"Error replacing audio: {e}")
+        return None
+
 def replace_original_audio(video_path, translated_audio_path, chunk_duration=30, translations="translations"):
     try:
         logger.info(f"Replacing audio in video: {video_path}")

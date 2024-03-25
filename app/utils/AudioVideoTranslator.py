@@ -14,6 +14,7 @@ import logging.config
 from transcribe_audio import transcribe_audio
 from synthesize_audio import synthesize_audio_openai
 from translate_text import translate_text
+from replace_original_audio import replace_original_audio_intime_range
 
 # Create or get the logger
 logger = logging.getLogger(__name__)  # This assumes the logger is defined in '__init__.py' and configured with 'logging.conf' or a 'logging.config.file' argument
@@ -41,7 +42,7 @@ def merge_segments(diarization_results, gap_threshold=1.5):
             last_turn, last_speaker = current_segment
             # If the current segment is for the same speaker and within the gap threshold,
             # extend the end of the last segment; otherwise, append and start a new segment
-            if speaker == last_speaker and turn.start - last_turn.end <= gap_threshold:
+            if speaker == last_speaker or turn.start - last_turn.end <= gap_threshold:
                 # Merge this segment with the current one by extending the end time
                 current_segment = (Segment(start=last_turn.start, end=turn.end), speaker)
             else:
@@ -67,12 +68,13 @@ class AudioVideoTranslator():
 
         logger.debug("Input audio path : %s",self.input_audio_path)
         logger.debug("Input video path : %s",self.input_video_path)
-                            
+                        
         pipeline = Pipeline.from_pretrained('pyannote/speaker-diarization-3.1',use_auth_token="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")  # Initialize the speaker diarization pipeline here
               # if GPU is available, use it
         if torch.cuda.is_available():
             pipeline.to(torch.device("cuda"))
         self.pipeline = pipeline
+        self._process_input_video() 
 
     def _extract_and_save_audio_segment(self, speaker, start_sec, end_sec):
         """
@@ -103,6 +105,11 @@ class AudioVideoTranslator():
         # Save the segment using the soundfile module
         sf.write(output_path, segment, samplerate)
         print(f"Saved segment to {output_path}")  
+        #Do not translate videos less then 2 seconds
+        if end_sec - start_sec < 1.7:
+            print(f"Segment duration is less than 1.7 seconds, skipping translation.")
+            self._extract_and_save_video_segment(speaker, start_sec, end_sec)
+            return
 
         transcribed_text = transcribe_audio(output_path)
         print(f"Transcribed text: {transcribed_text}")
@@ -112,7 +119,9 @@ class AudioVideoTranslator():
 
         # Synthesize audio for the transcribed text
         translated_audio_path = synthesize_audio_openai(translated_text, self.lang, output_file_path=filename ,api_key=None , simulate_male_voice=True)
-
+              
+        # Replace the audio in the video with the translated audio
+        replace_original_audio_intime_range(self.clip, translated_audio_path, start_sample, end_sample, output_path = "../translations")
 
     def _extract_and_save_video_segment(self, speaker, start_sec, end_sec):
         """
@@ -122,11 +131,13 @@ class AudioVideoTranslator():
         - end_sec: End of the segment in seconds.
         """
         clip = self.clip.subclip(start_sec, end_sec)
+        #clip.set_audio(self.audio_clip) if you have an audio clip to add to the video
           # Generate a readable filename
         filename = f"{os.path.splitext(os.path.basename(self.input_audio_path))[0]}_{start_sec}-{end_sec}_{speaker}.mp4"
         output_path = os.path.join(self.output_folder, filename)
 
         clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+        return filename
 
 
     def _perform_audio_diarization(self):
@@ -161,9 +172,8 @@ class AudioVideoTranslator():
             print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
 
             # Extract segment from the input audio and video
-            self._extract_and_save_audio_segment(speaker,turn.start, turn.end)
-            self._process_input_video()
-            self._extract_and_save_video_segment(speaker,turn.start, turn.end)
+            self._extract_and_save_audio_segment(speaker,turn.start, turn.end)            
+
 
 
     def merge_video_files(self, input_pattern):
@@ -195,4 +205,5 @@ if __name__ == "__main__":
     # Test your class implementation here - You may need to adjust the paths or add other test data based on your use case
     print("Input media:", audio_file_path, video_file_path)
     av._perform_audio_diarization()
+    av.merge_video_files("*_*.mp4")
 

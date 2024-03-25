@@ -6,7 +6,7 @@ from openai import OpenAI
 from mistralai.client import MistralClient
 import re
 from mistralai.models.chat_completion import ChatMessage
-from .tokenizer_limiter import read_approx_tokens, sent_tokenize, count_tokens
+from tokenizer_limiter import read_approx_tokens, sent_tokenize, count_tokens
 
 import logging
 logger = logging.getLogger(__name__)

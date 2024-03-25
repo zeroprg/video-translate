@@ -142,30 +142,16 @@ def insert_pause(chunk):
     return chunk.replace('DYNAMIC MUSIC', ' [PAUSE:10] ')
 
 
-def synthesize_audio_local(translated_text, target_language, translations="translations", api_key=None, simulate_male_voice=False):
 
-    client = OpenAI(
-    # This part is not needed if you set these environment variables before import openai
-    # export OPENAI_API_KEY=sk-11111111111
-    # export OPENAI_BASE_URL=http://localhost:8000/v1
-    api_key = "sk-111111111",
-    base_url = "http://localhost:8000/v1",
-    )
-
-    with client.audio.speech.with_streaming_response.create(
-    model="tts-1",
-    voice="alloy",
-    input=translated_text
-    ) as response:
-        response.stream_to_file("speech.mp3")
-
-def synthesize_audio_openai(translated_text, target_language, translations="translations", api_key=None, simulate_male_voice=False):
+def synthesize_audio_openai(translated_text, target_language, output_file_path=None, api_key=None,  simulate_male_voice=False):
     """
     Synthesize audio for the translated text.
     """
-    audio_filename = os.path.join(translations, f"translated_audio_{target_language}.mp3")
-    if os.path.exists(audio_filename):
-        return audio_filename
+    if output_file_path is None:
+        audio_filename = os.path.join("../translations", f"translated_audio_{target_language}.mp3")
+    else:
+        # open as file with OS library
+        audio_filename = os.path.join("../translations",output_file_path)
 
     try:
         # Initialize the OpenAI client
@@ -197,7 +183,7 @@ def synthesize_audio_openai(translated_text, target_language, translations="tran
             audio_chunks.append(response.content)
 
         # Save the synthesized speech to an MP3 file
-        audio_filename = os.path.join(translations, f"translated_audio_{target_language}.mp3")
+        #audio_filename = os.path.join(translations, f"translated_audio_{target_language}.mp3")
         with open(audio_filename, "wb") as audio_file:
             for chunk in audio_chunks:
                 audio_file.write(chunk)
@@ -210,7 +196,7 @@ def synthesize_audio_openai(translated_text, target_language, translations="tran
 if __name__ == "__main__":
     translated_text = "Welcome to today's episode where we're diving into the cutting edge world of AI with a focus on GPT-4 all. I'm your host Darya and in this brief introduction we'll explore what GPT-4 all is all about. "
     translations_dir = "../translations"
-    api_key = "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"
+    api_key = "***REMOVED***"
 
     result = synthesize_audio(translated_text, "en", translations_dir, simulate_male_voice=False, api_key=api_key)
 

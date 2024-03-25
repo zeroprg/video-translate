@@ -15,6 +15,7 @@ from utils.transcribe_audio import transcribe_audio
 from utils.translate_text import translate_text
 from utils.synthesize_audio import synthesize_audio, synthesize_audio_openai
 from utils.replace_original_audio import replace_original_audio
+from utils.AudioVideoTranslator import AudioVideoTranslator
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,6 +25,31 @@ app = FastAPI()
 # Define empty sessions dictionary
 sessions = {}
 api_keys: Dict[str, Dict[str, str]] = {}
+
+
+from concurrent.futures import ThreadPoolExecutor
+
+# Pass the pattern to executor like this : r"_(\d+)-(\d+)_(\d+)\.wav$"
+def execute_files(file_paths, execution_function, pattern, max_workers=10):
+    # Pattern to extract start time from filename
+    pattern = re.compile(pattern)
+
+    # Filter file_paths to include only those that match the pattern
+    filtered_paths = [path for path in file_paths if pattern.search(path)]
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit only the filtered paths to the executor
+        future_to_file = {executor.submit(execution_function, path): path for path in filtered_paths}
+        results = {}
+        for future in concurrent.futures.as_completed(future_to_file):
+            path = future_to_file[future]
+            try:
+                result = future.result()
+                file_name_without_extension = os.path.splitext(os.path.basename(path))[0]
+                results[file_name_without_extension] = result
+            except Exception as exc:
+                print(f"{path} generated an exception: {exc}")
+        return results
 
 class APIKeys(BaseModel):
     openai_key: str
@@ -96,12 +122,21 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 
     video_path = download_video(url)
     audio_path = extract_audio(video_path)
-    transcription = transcribe_audio(audio_path)
+
+    av = AudioVideoTranslator(audio_path, video_path, output_folder="downloads")   
+    print("Input media:", audio_path, video_path)
+    av._perform_audio_diarization()
+
+    # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
+    # results will keep 
+    results = execute_files(".\downloads", r"_(\d+)-(\d+)_(\d+)\.wav$", transcribe_audio)
+    #transcription = transcribe_audio(audio_path)
 
     translated_videos = []
 
     for lang in cleaned_languages:
-        translated_text = translate_text(transcription, lang, translators, prompt = None, audio_path = audio_path)
+      for filename,transcription in results.items():
+        translated_text = translate_text(transcription, lang, translators, prompt = None, audio_path = f"{filename}.txt")
         translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=None , simulate_male_voice=True)
        
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
@@ -136,7 +171,15 @@ async def translate_video_file(file: UploadFile, target_languages: str, request:
 
     video_path = download_video(file)
     audio_path = extract_audio(video_path)
-    transcription = transcribe_audio(audio_path)
+
+    av = AudioVideoTranslator(audio_path, video_path, output_folder="downloads")
+   
+    print("Input media:", audio_path, video_path)
+    av._perform_audio_diarization()
+    # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
+    # results will keep 
+    results = execute_files(".\downloads", r"_(\d+)-(\d+)_(\d+)\.wav$", transcribe_audio)
+    #transcription = transcribe_audio(audio_path)
 
     translated_videos = []
 

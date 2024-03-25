@@ -1,4 +1,3 @@
-
 import openai
 import whisper
 import logging
@@ -71,7 +70,7 @@ def transcribe_audio(audio_path):
             return transcribed_text
 
         # Load the Whisper model
-        model = whisper.load_model("base",device='cuda')
+        model = whisper.load_model("small",device='cuda')
 
         logger.info(f"Transcribing audio file: {absolute_audio_path}")
 

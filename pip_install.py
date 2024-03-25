@@ -35,26 +35,23 @@ def check_python_bit_version():
     bit_version = struct.calcsize("P") * 8
     print(f"Python Bit Version: {bit_version}")
 
-def install_pyaudioanalysis():
-    """Install pyAudioAnalysis and its dependencies."""
-    print("Installing pyAudioAnalysis...")
-    subprocess.call(['pip', 'install', 'git+https://github.com/tyiannak/pyAudioAnalysis.git'])
 
 if __name__ == '__main__':
     print("Upgrading pip and setuptools...")
     upgrade_pip_and_setuptools()
-    
-    print("Installing requirements from requirements.txt...")
-    install_requirements()
-    
-    print("Installing PyTorch with CUDA 12.1 support...")
-    install_pytorch()
-    
+
     print("Checking if ffmpeg is installed on Linux...")
     check_ffmpeg_installed()
+
+    print("Installing PyTorch and PyTorchVision  with CUDA 12.1 support...")
+    install_pytorch()
+
+    print("Installing requirements from requirements.txt...")
+    install_requirements()
+        
+
     
-    print("Installing pyAudioAnalysis and its dependencies...")
-    install_pyaudioanalysis()
+ 
     
     print("Checking Python bit version...")
     check_python_bit_version()

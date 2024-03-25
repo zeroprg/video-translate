@@ -12,4 +12,5 @@ python-multipart
 transformers
 
 librosa
+speechbrain
 #yt-dlp

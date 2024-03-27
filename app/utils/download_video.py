@@ -76,9 +76,7 @@ def download_youtube_video(url, output_path='downloads'):
         else:
             logger.info(f"Video already exists: {video_path}")
             return video_path
-    except pytube.exceptions.VideoUnavailable:
-        logger.error("The video is unavailable or deleted.")
-        return None
+
     except Exception as e:
         logger.error(f"Error downloading YouTube video: {e}")
         return None

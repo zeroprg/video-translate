@@ -8,6 +8,7 @@ import json
 
 from typing import Dict
 import uuid
+import re
 
 from utils.download_video import download_video
 from utils.extract_audio import extract_audio
@@ -26,11 +27,11 @@ app = FastAPI()
 sessions = {}
 api_keys: Dict[str, Dict[str, str]] = {}
 
-
+import concurrent
 from concurrent.futures import ThreadPoolExecutor
 
 # Pass the pattern to executor like this : r"_(\d+)-(\d+)_(\d+)\.wav$"
-def execute_files(file_paths, execution_function, pattern, max_workers=10):
+def execute_files(file_paths, execution_function, pattern, max_workers=2):
     # Pattern to extract start time from filename
     pattern = re.compile(pattern)
 
@@ -96,6 +97,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     session,_ = get_session(request)
     user_id = session.get("user_id", str(uuid.uuid4()))
 
+    translated_videos = []
 #TODO uncomment after POSTMAN testing
 #    if user_id not in api_keys:
 #        raise HTTPException(status_code=400, detail="User not found or API keys not configured.")
@@ -104,11 +106,11 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 #    mistralai_key = api_keys[user_id]["mistralai_key"]
 
     translators = {
+        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": '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', "model_name": "davinci"},
         "Ollama": {"name": "ollama", "available": True, "function": "translate_text_with_ollama", "api_key": None, "model_name": "llama2"},
-        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": 'sk-***', "model_name": "davinci"},
-        "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": 'BCI4GMNwnbZaEKcxjeEflPs5RamS1157'}
+        "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": '***'}
     }
-
+    
     # Translate target_languages to English
     prompt = f"Please extract only the language names from the following text and provide them in English, separated by commas: {target_languages}"
     translated_target_languages = target_languages #translate_text(target_languages, "English", openai_key, mistralai_key, prompt = prompt)
@@ -123,28 +125,33 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     video_path = download_video(url)
     audio_path = extract_audio(video_path)
 
-    av = AudioVideoTranslator(audio_path, video_path, output_folder="downloads")   
+    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0])   
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
+    filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]
+        # Translate the filename text
+    filename_no_extention_trans = translate_text(filename_no_extention, cleaned_languages[0], translators, prompt = None)
+    # Merge files and Rename the output file with the translated filename 
+    translated_video_path = av.merge_video_files(output_filename = f"{filename_no_extention_trans}.mp4")
+    translated_videos.append(translated_video_path)
 
     # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
     # results will keep 
-    results = execute_files(".\downloads", r"_(\d+)-(\d+)_(\d+)\.wav$", transcribe_audio)
+    #results = execute_files(".\downloads", transcribe_audio , r"_(\d+)-(\d+)_(\d+)\.wav$")
     #transcription = transcribe_audio(audio_path)
 
-    translated_videos = []
-
+    """
     for lang in cleaned_languages:
       for filename,transcription in results.items():
         translated_text = translate_text(transcription, lang, translators, prompt = None, audio_path = f"{filename}.txt")
-        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=None , simulate_male_voice=True)
+        translated_audio_path = synthesize_audio_openai(translated_text, lang, translations="translations",api_key=None , simulate_male_voice=True, speaker=0)
        
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
         translated_videos.append(translated_video_path)
 
     #shutil.rmtree("./translations/", ignore_errors=True)
     #os.makedirs("./translations/", exist_ok=True)
-
+    """
     return {"message": "Translation completed successfully.", "translated_videos": translated_videos}
 
 @app.post("/translate_video_file/")

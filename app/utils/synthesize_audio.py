@@ -143,15 +143,19 @@ def insert_pause(chunk):
 
 
 
-def synthesize_audio_openai(translated_text, target_language, output_file_path=None, api_key=None,  simulate_male_voice=False):
+def synthesize_audio_openai(translated_text, target_language, output_file_path=None, api_key=None, simulate_male_voice=True, speaker=0, speed = 1.1):
     """
     Synthesize audio for the translated text.
     """
+    male_voices = ["onyx","fable","echo",  ]
+    female_voices = [ "alloy","nova" , "shimmer"] 
+
+
     if output_file_path is None:
-        audio_filename = os.path.join("../translations", f"translated_audio_{target_language}.mp3")
+        audio_filename = os.path.join("./translations", f"translated_audio_{target_language}.mp3")
     else:
         # open as file with OS library
-        audio_filename = os.path.join("../translations",output_file_path)
+        audio_filename = os.path.join("./translations",output_file_path)
 
     try:
         # Initialize the OpenAI client
@@ -168,10 +172,11 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
 
         # Set model parameter based on the target language
         model = 'tts-1'  # Adjust the model based on your preference
-
+        logger.info(f"simulate_male_voice: {simulate_male_voice} , speaker: {speaker}")
         # Set voice parameter based on voice type
-        voice = 'fable' if simulate_male_voice else 'shimmer'  # Male voice if simulate_male_voice is True, else female voice
-
+        voice = male_voices[speaker % 4] if simulate_male_voice else female_voices[speaker % 2]  # Male voice if simulate_male_voice is True, else female voice
+        logger.info(f"voice: {voice}")
+       
         # Split translated text into chunks
         text_chunks = split_text_into_chunks(translated_text)
 
@@ -179,7 +184,11 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
         audio_chunks = []
         for chunk in text_chunks:
             chunk_with_pause = insert_pause(chunk)
-            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause, speed = 0.9)
+            if api_key is None :
+                speed = 0.97 if simulate_male_voice else 0.67
+
+
+            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause)
             audio_chunks.append(response.content)
 
         # Save the synthesized speech to an MP3 file
@@ -195,7 +204,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
 
 if __name__ == "__main__":
     translated_text = "Welcome to today's episode where we're diving into the cutting edge world of AI with a focus on GPT-4 all. I'm your host Darya and in this brief introduction we'll explore what GPT-4 all is all about. "
-    translations_dir = "../translations"
+    translations_dir = "./app/translations"
     api_key = "***REMOVED***"
 
     result = synthesize_audio(translated_text, "en", translations_dir, simulate_male_voice=False, api_key=api_key)

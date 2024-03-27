@@ -6,13 +6,13 @@ from openai import OpenAI
 from mistralai.client import MistralClient
 import re
 from mistralai.models.chat_completion import ChatMessage
-from tokenizer_limiter import read_approx_tokens, sent_tokenize, count_tokens
+from .tokenizer_limiter import read_approx_tokens, sent_tokenize, count_tokens
 
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG) #Set log level if needed
 
-def translate_text_with_ollama(source_text, target_language, api_key = None, prompt = None):
+def translate_text_with_ollama(source_text, target_language, api_key = None, prompt = None , model="hemanth/englishtranslatorandimprover"):
     """
     Translates a given text using the Mistral model from Ollama.
 
@@ -30,10 +30,11 @@ def translate_text_with_ollama(source_text, target_language, api_key = None, pro
     if prompt:
         translation_prompt = f"{prompt}: {source_text}"
     else:
-        translation_prompt = f"Translate the following text to {target_language}: {source_text} . Return only translated text"
+        translation_prompt = f"Translate to {target_language} the following text: {source_text}"
+
 
     payload = {
-        "model": "llama2",
+        "model": "llama2", #TODO : Change this to the actual model name: model
         "messages": [{"role": "user", "content": translation_prompt}],
         "stream": False
     }
@@ -75,7 +76,7 @@ def openai_translate_text(source_text, target_language, api_key, prompt=None):
         if prompt:
             translation_prompt = f"{prompt}: {source_text}"
         else:
-            translation_prompt = f"Translate the following text to {target_language}: {source_text}"
+            translation_prompt = f"Translate to {target_language} the following text: {source_text}"
 
 
         # Make the API call using the client
@@ -91,8 +92,7 @@ def openai_translate_text(source_text, target_language, api_key, prompt=None):
 
         # Extract and return the translated text from the response
         translated_text = response.choices[0].message.content.strip() if response.choices else None
-        logger.info(f"Translated: {translated_text}")
-
+       
         return translated_text
     except Exception as e:
         logger.error(f"Error translating text with OpenAI: {e}")
@@ -107,9 +107,9 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
         client = MistralClient(api_key=api_key)
         
         if prompt:
-            source_text = f"{prompt}: {source_text}"
+            translation_prompt = f"{prompt}: {source_text}"
         else:
-            source_text = f"Left the SRT (SubRip Subtitle) file format unchangable translate following text to {target_language}: {source_text}"
+            translation_prompt = f"Translate to {target_language} the following text: {source_text}"
 
         messages = [
                 ChatMessage(role="user", content=source_text)

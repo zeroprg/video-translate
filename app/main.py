@@ -106,7 +106,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 #    mistralai_key = api_keys[user_id]["mistralai_key"]
 
     translators = {
-        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": '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', "model_name": "davinci"},
+        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": None, "model_name": "davinci"},
         "Ollama": {"name": "ollama", "available": True, "function": "translate_text_with_ollama", "api_key": None, "model_name": "llama2"},
         "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": '***'}
     }

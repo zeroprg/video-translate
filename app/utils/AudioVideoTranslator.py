@@ -33,19 +33,21 @@ translators = {
 }
 
 def extract_speaker_index(speaker):
-    match = re.match('SPEAKER_(\\d)', speaker)
-    return int(match[1]) if match else 0
+    match = re.match(r'SPEAKER_(\d+)', speaker)
+    return int(match.group(1)) if match else 0
 
-def merge_segments(diarization_results, gap_threshold=1.5):
+
+def merge_segments(diarization_results, gap_threshold=0.92):
+    print("Merging segments...")
     merged_segments = []
     current_segment = None
+    for turn, _, speaker_str in diarization_results:
 
-    for turn, speaker_str in diarization_results:
         speaker = extract_speaker_index(speaker_str)
+        print(f"Speaker: {speaker}")
         # Adjust the start of the first segment to 0 if it's the initial one
-        if current_segment is None:
-            start_time = 0 if turn.start > 0 else turn.start
-            current_segment = (Segment(start=start_time, end=turn.end), speaker)
+        if current_segment is None:            
+            current_segment = (Segment(start=0, end=turn.end), speaker)
         else:
             last_turn, last_speaker = current_segment
             # If the current segment is for the same speaker and within the gap threshold,
@@ -59,7 +61,7 @@ def merge_segments(diarization_results, gap_threshold=1.5):
                 merged_segments.append(current_segment)
                 
                 current_segment = (turn, speaker)
-                print(f"{turn.start} - {turn.end}: {speaker} ")
+        print(f"{turn.start} - {turn.end}: {speaker} ")
 
     # Don't forget to add the last processed segment
     if current_segment is not None:
@@ -69,9 +71,9 @@ def merge_segments(diarization_results, gap_threshold=1.5):
 
 
 class AudioVideoTranslator():
-    def __init__(self, input_audio_path, input_video_path=None, output_folder="./translations" , lang = "English"):
+    def __init__(self, input_audio_path, input_video_path=None, output_folder="./translations" , lang = "English", speakers = ["male","male"]): #default 2 male speakers
         self.threads = threading.Semaphore(1)
-
+        self.speakers = speakers
         self.input_audio_path = input_audio_path
         self.input_video_path = input_video_path
         self.output_folder = output_folder
@@ -88,27 +90,19 @@ class AudioVideoTranslator():
         self._process_input_video()
         self._process_input_audio() 
 
-    def _extract_and_save_audio_segment(self, speaker, start_sec, end_sec):
+    def _extract_and_save_audio_segment(self, speaker, start_sec, end_sec , speakers = None):
         """
         Extracts a segment from the loaded audio data and saves it to a file.
         Args:
         - start_sec: Start of the segment in seconds.
         - end_sec: End of the segment in seconds.
         """
+        gender = "male"
+        if speakers is not None:
+           speaker = speaker%len(speakers)
+           gender = speakers[speaker]
+          
 
-        
-        """
-        # Corrected use of soundfile for efficient reading
-        # Note: Ensure 'path' variable is defined or use 'self.input_audio_path'
-        with sf.SoundFile(self.input_audio_path) as sound_file:
-            # Calculate start and end samples
-            samplerate = sound_file.samplerate
-            start_sample = int(start_sec * samplerate)
-            end_sample = int(end_sec * samplerate)
-
-            sound_file.seek(start_sample)
-            segment = sound_file.read(frames=end_sample - start_sample)
-        """
 
         filename_no_extention = f"{os.path.splitext(os.path.basename(self.input_audio_path))[0]}_{start_sec}-{end_sec}_{speaker}"
 
@@ -121,7 +115,7 @@ class AudioVideoTranslator():
         #sf.write(output_path, segment, samplerate)
         #print(f"Saved segment to {output_path}")  
         #Do not translate videos less then 2 seconds
-        if end_sec - start_sec < 1.7:
+        if end_sec - start_sec < 1.0:
             print(f"Segment duration is less than 1.7 seconds, skipping translation.")
             self._extract_and_save_video_segment(speaker, start_sec, end_sec)
             return
@@ -134,7 +128,8 @@ class AudioVideoTranslator():
         translated_text = translate_text(transcribed_text, self.lang, translators, prompt = None, audio_path = output_path )
 
         # Synthesize audio for the transcribed text
-        translated_audio_path = synthesize_audio_openai(translated_text, self.lang, output_file_path=filename , api_key = translators["OpenAI"]["api_key"] , simulate_male_voice=True)
+        translated_audio_path = synthesize_audio_openai(translated_text, self.lang, output_file_path=filename , api_key = translators["OpenAI"]["api_key"] ,
+             simulate_male_voice = True if gender == "male" else False , speaker = speaker)
               
         # Replace the audio in the video with the translated audio
         output_file = os.path.join(self.output_folder, f"{filename_no_extention}.mp4")
@@ -159,18 +154,18 @@ class AudioVideoTranslator():
 
 
     def _perform_audio_diarization(self):
-        """Perform speaker diarization on the input audio using the pyannote library."""
-        logger.info("Performing speaker diarization...")
-        # run the pipeline on an audio file
-        diarization = self.pipeline(self.input_audio_path)
-
+        print("Performing speaker diarization...")
         waveform, sample_rate = torchaudio.load(self.input_audio_path)
         diarization = self.pipeline({"waveform": waveform, "sample_rate": sample_rate})
-        segmentation_indices = diarization.itertracks(yield_label=False)
-        print(f"segmentation_indices: {segmentation_indices}")
-        # Merge the segments to avoid short pauses between speakers
-        return self._save_segments(segmentation_indices)
+        segmentation_indices = diarization.itertracks(yield_label=True)
         
+        # Note: Printing the generator directly won't give meaningful output
+        #for segment in segmentation_indices:
+        #    print(f"Segment: {segment}")
+        
+        # Assuming _save_segments is correctly implemented to handle segmentation_indices
+        self._save_segments(segmentation_indices)
+
 
     def _process_input_video(self):
         """Process input video (load clip with MoviePyEdit, get frames per second)"""
@@ -190,13 +185,14 @@ class AudioVideoTranslator():
         return self.clip    
 
 
-    def _save_segments(self, merged_segments):
-        logger.info("Saving extracted speech segments...") 
-        merged_segments = merge_segments(merged_segments)
+    def _save_segments(self, segmentation_indices):
+        print("Saving extracted speech segments...") 
+        merged_segments = merge_segments(segmentation_indices)
         for (turn, speaker) in merged_segments:
             print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
             # Extract segment from the input audio and video
-            self._extract_and_save_audio_segment(speaker,turn.start, turn.end)            
+            
+            self._extract_and_save_audio_segment(speaker,turn.start, turn.end, speakers = self.speakers)            
 
     """
 
@@ -214,14 +210,20 @@ class AudioVideoTranslator():
 
 
     def merge_video_files(self , output_filename = None):
-        print(f"Merging video files in {self.output_folder}/{output_filename}...")
-        video_pattern = re.compile(r"_(\d+)-(\d+\.\d+|\d+)_(\d+)\.mp4$")
+        print(f"Merging video files in self.output_folder: {self.output_folder} / output_filename: {output_filename}...")
+
+        print(f"Merging video files in {self.output_folder} / {output_filename}...")
+        video_pattern = re.compile(r"(\d+\.\d+|\d+)_(\d+)\.mp4$")
         audio_pattern = re.compile(r"(\d+\.\d+|\d+)_(\d+)\.wav$")
-        
+        #text_pattern =  re.compile(r"(\d+\.\d+|\d+)_(\d+)\.txt$")
+
         # Get all .mp4 files in the output folder
         all_files = glob.glob(os.path.join(self.output_folder, "*.mp4"))
+        #print(f"all_files files : {all_files}")
         # Filter files using the video_pattern
         filtered_files = [file for file in all_files if video_pattern.search(os.path.basename(file))]
+        #print(f"Filtered files : {filtered_files}")
+
         if output_filename is None: 
             output_filename = f"{os.path.splitext(os.path.basename(self.input_video_path))[0]}(trans).mp4"
 
@@ -231,7 +233,7 @@ class AudioVideoTranslator():
             # If only one file is found, rename it
             file_path = filtered_files[0]            
             os.rename(file_path, os.path.join(self.output_folder, output_filename))
-            print(f"File renamed to: {output_filename}")
+            #print(f"File renamed to: {output_filename}")
         else:
             # Sort and merge if more than one file is found
             filtered_files.sort(key=lambda x: [float(num) if '.' in num else int(num) 
@@ -241,6 +243,7 @@ class AudioVideoTranslator():
                
             final_clip.write_videofile(os.path.join(self.output_folder, output_filename))
             print("File saved to {output_filename}") 
+        """    
         try:
             # Delete all files matching the video and audio patterns for cleanup
             for pattern in [video_pattern, audio_pattern]:
@@ -250,8 +253,9 @@ class AudioVideoTranslator():
                         print(f"Deleted {file}")
         except Exception as e:          
             print(f"Error deleting files: {e}")
+        """        
         return  output_filename           
-        
+ 
 
 
 if __name__ == "__main__":    
@@ -260,10 +264,10 @@ if __name__ == "__main__":
     
     video_file_path = "./app/downloads/Истинный Смысл Матрицы. Наука, Религия и Философия в Матрице.mp4"
 
-    av = AudioVideoTranslator(audio_file_path,video_file_path)
+    av = AudioVideoTranslator(audio_file_path,video_file_path, output_folder="app/translations")
 
     # Test your class implementation here - You may need to adjust the paths or add other test data based on your use case
     print("Input media:", audio_file_path, video_file_path)
-    av._perform_audio_diarization()
+    #av._perform_audio_diarization()
     av.merge_video_files()
 

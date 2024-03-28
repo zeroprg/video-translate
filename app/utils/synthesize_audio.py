@@ -147,7 +147,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
     """
     Synthesize audio for the translated text.
     """
-    male_voices = ["onyx","fable","echo",  ]
+    male_voices = ["fable", "echo", "onyx"]
     female_voices = [ "alloy","nova" , "shimmer"] 
 
 

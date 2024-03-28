@@ -36,20 +36,34 @@ def replace_original_audio_intime_range(video_clip, audio, start_time, end_time,
     try:
         logger.info(f"Replacing audio in video: {video_clip.filename} ")
         logger.info(f"Audio path or audio clip: {audio}")
-        logger.info(f"Time range: {start_time}-{end_time}")
+        video_clip_duration = end_time - start_time
+        logger.info(f"Time range: {start_time}-{end_time}. Time range is in seconds: {video_clip_duration}")
         logger.info(f"Video_clip.duration: {video_clip.duration}")
-
+        
         # Load the audio clip
         if not isinstance(audio, AudioFileClip):
             audio = AudioFileClip(audio)
-
         logger.info(f"audio.clip.duration: {audio.duration}")
 
-        if audio.duration > video_clip.duration:
-            # Calculate the speed change required to match the video duration
-            speed_change_factor = audio.duration / video_clip.duration
+        # Golden ratio and its reciprocal
+        golden_ratio = 1.218
+        golden_ratio_reciprocal = 1 / golden_ratio
+
+        # Calculate the ratio of the shorter duration to the longer duration
+        duration_ratio = min(audio.duration, video_clip_duration) / max(audio.duration, video_clip_duration)
+
+        # Determine if adjustment is needed based on the golden ratio thresholds
+        if golden_ratio_reciprocal <= duration_ratio <= golden_ratio:
+            if audio.duration > video_clip_duration:
+                # Audio is longer than video, and difference is significant
+                speed_change_factor = video_clip_duration / audio.duration
+            else:
+                # Audio is shorter than video, and difference is significant
+                speed_change_factor = audio.duration / video_clip_duration
+
             # Apply the speed change
             audio = audio.fx(vfx.speedx, speed_change_factor)
+
 
         new_subclip = video_clip.subclip(t_start=start_time, t_end=end_time).set_audio(audio)
 

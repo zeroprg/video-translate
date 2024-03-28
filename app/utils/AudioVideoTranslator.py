@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)  # This assumes the logger is defined in '_
 
 from pyannote.core import Segment
 
+#Example of default translators
 translators = {
-    "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": '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', "model_name": "davinci"},
+    "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": None, "model_name": "davinci"},
     "Ollama": {"name": "ollama", "available": True, "function": "translate_text_with_ollama", "api_key": None, "model_name": "llama2"},
     "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": '***'}
 }
@@ -71,9 +72,10 @@ def merge_segments(diarization_results, gap_threshold=0.92):
 
 
 class AudioVideoTranslator():
-    def __init__(self, input_audio_path, input_video_path=None, output_folder="./translations" , lang = "English", speakers = ["male","male"]): #default 2 male speakers
+    def __init__(self, input_audio_path, input_video_path=None, output_folder="./translations" , lang = "English", speakers = ["male","male"], translators = translators): #default 2 male speakers
         self.threads = threading.Semaphore(1)
         self.speakers = speakers
+        self.translators = translators
         self.input_audio_path = input_audio_path
         self.input_video_path = input_video_path
         self.output_folder = output_folder
@@ -125,10 +127,10 @@ class AudioVideoTranslator():
         # Transcribe the audio segment        
         transcribed_text = transcribe_audio(output_path)
         # Translate the transcribed text
-        translated_text = translate_text(transcribed_text, self.lang, translators, prompt = None, audio_path = output_path )
+        translated_text = translate_text(transcribed_text, self.lang, self.translators, prompt = None, audio_path = output_path )
 
         # Synthesize audio for the transcribed text
-        translated_audio_path = synthesize_audio_openai(translated_text, self.lang, output_file_path=filename , api_key = translators["OpenAI"]["api_key"] ,
+        translated_audio_path = synthesize_audio_openai(translated_text, self.lang, output_file_path=filename , api_key = self.translators["OpenAI"]["api_key"] ,
              simulate_male_voice = True if gender == "male" else False , speaker = speaker)
               
         # Replace the audio in the video with the translated audio
@@ -189,7 +191,7 @@ class AudioVideoTranslator():
         print("Saving extracted speech segments...") 
         merged_segments = merge_segments(segmentation_indices)
         for (turn, speaker) in merged_segments:
-            print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
+            print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker:{speaker}")
             # Extract segment from the input audio and video
             
             self._extract_and_save_audio_segment(speaker,turn.start, turn.end, speakers = self.speakers)            

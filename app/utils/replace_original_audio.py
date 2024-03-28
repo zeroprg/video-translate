@@ -46,7 +46,7 @@ def replace_original_audio_intime_range(video_clip, audio, start_time, end_time,
         logger.info(f"audio.clip.duration: {audio.duration}")
 
         # Golden ratio and its reciprocal
-        golden_ratio = 1.218
+        golden_ratio = 1.29
         golden_ratio_reciprocal = 1 / golden_ratio
 
         # Calculate the ratio of the shorter duration to the longer duration

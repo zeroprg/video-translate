@@ -196,7 +196,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
         with open(audio_filename, "wb") as audio_file:
             for chunk in audio_chunks:
                 audio_file.write(chunk)
-
+        logger.info(f"Audio file successfully created: {audio_filename}")
         return audio_filename
     except Exception as e:
         print(f"Error synthesizing audio: {e}")

@@ -92,7 +92,7 @@ async def add_api_keys(request: Request):
         raise HTTPException(status_code=400, detail="Invalid API key data")
 
 @app.post("/translate_video_url/")
-async def translate_video_url(url: str, target_languages: str, request: Request):
+async def translate_video_url(url: str, target_languages: str, request: Request, openAIkey: str, mistralAIkey: str):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
     session,_ = get_session(request)
     user_id = session.get("user_id", str(uuid.uuid4()))
@@ -124,8 +124,10 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 
     video_path = download_video(url)
     audio_path = extract_audio(video_path)
-
-    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0])   
+    #set up the keys
+    translators["OpenAI"]["api_key"] = None if openAIkey =='' else openAIkey
+    translators["Mistralai"]["api_key"] = None if mistralAIkey =='' else mistralAIkey  
+    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0], translators=translators)   
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
     filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]

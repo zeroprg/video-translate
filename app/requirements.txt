@@ -13,4 +13,5 @@ transformers
 
 librosa
 speechbrain
-#yt-dlp
+
+gradio # for WEB UI 

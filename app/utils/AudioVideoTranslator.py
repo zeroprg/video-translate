@@ -101,7 +101,7 @@ class AudioVideoTranslator():
         """
         gender = "male"
         if speakers is not None:
-           speaker = speaker%len(speakers)
+           speaker = speaker % len(speakers)
            gender = speakers[speaker]
           
 
@@ -157,9 +157,15 @@ class AudioVideoTranslator():
 
     def _perform_audio_diarization(self):
         print("Performing speaker diarization...")
-        waveform, sample_rate = torchaudio.load(self.input_audio_path)
-        diarization = self.pipeline({"waveform": waveform, "sample_rate": sample_rate})
-        segmentation_indices = diarization.itertracks(yield_label=True)
+        if len(self.speakers) > 1 :
+            waveform, sample_rate = torchaudio.load(self.input_audio_path)
+            diarization = self.pipeline({"waveform": waveform, "sample_rate": sample_rate})
+            segmentation_indices = diarization.itertracks(yield_label=True)
+        else: 
+            segmentation_indices = None
+
+
+
         
         # Note: Printing the generator directly won't give meaningful output
         #for segment in segmentation_indices:
@@ -175,20 +181,24 @@ class AudioVideoTranslator():
             raise ValueError("No input video provided.")
         self.clip = VideoFileClip(self.input_video_path)
         self.fps = self.clip.fps
-        logger.debug('Video Clip fps : %s',str(self.fps))
+        print('Video Clip fps : %s',str(self.fps))
         return self.clip
 
     def _process_input_audio(self):
         """Process input video (load clip with MoviePyEdit, get frames per second)"""
-        if not self.input_video_path:
-            raise ValueError("No input video provided.")
+        if not self.input_audio_path:
+            raise ValueError("No input audio provided.")
         self.audio_clip = AudioFileClip(self.input_audio_path)        
-        logger.debug('Video Clip fps : %s',str(self.fps))
-        return self.clip    
+        print(f"Audio Clip duration : {self.audio_clip.duration}")
+        return self.audio_clip    
 
 
     def _save_segments(self, segmentation_indices):
         print("Saving extracted speech segments...") 
+        if segmentation_indices is None:
+            print("No speaker diarization results found. Only one segment ")
+            self._extract_and_save_audio_segment(0, 0.0, self.audio_clip.duration, speakers = self.speakers) 
+            return
         merged_segments = merge_segments(segmentation_indices)
         for (turn, speaker) in merged_segments:
             print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker:{speaker}")
@@ -228,7 +238,8 @@ class AudioVideoTranslator():
 
         if output_filename is None: 
             output_filename = f"{os.path.splitext(os.path.basename(self.input_video_path))[0]}(trans).mp4"
-
+        else:
+            output_filename = output_filename.replace("..mp4", ".mp4")
         if not filtered_files:
             print("No matching video files were found.")
         elif len(filtered_files) == 1:

@@ -1,6 +1,8 @@
 # main.py
 import os
 import shutil
+import gradio as gr
+import requests
 
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel
@@ -92,9 +94,15 @@ async def add_api_keys(request: Request):
         raise HTTPException(status_code=400, detail="Invalid API key data")
 
 @app.post("/translate_video_url/")
-async def translate_video_url(url: str, target_languages: str, request: Request, openAIkey: str, mistralAIkey: str):
+async def translate_video_url(url: str, target_languages: str, request: Request):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
     session,_ = get_session(request)
+    openAIkey = request.get("openAIkey", None)
+    mistralAIkey = request.get("mistralAIkey", None)
+    genders = request.get("genders", "male")
+    logger.info(f"openAIkey: {openAIkey} mistralAIkey: {mistralAIkey} genders: {genders}")
+    speakers = genders.split(',')  # Splitting the input string into a list
+    logger.info("speakers: {speakers}")
     user_id = session.get("user_id", str(uuid.uuid4()))
 
     translated_videos = []
@@ -127,7 +135,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request,
     #set up the keys
     translators["OpenAI"]["api_key"] = None if openAIkey =='' else openAIkey
     translators["Mistralai"]["api_key"] = None if mistralAIkey =='' else mistralAIkey  
-    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0], translators=translators)   
+    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0], translators=translators, speakers = speakers)   
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
     filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]
@@ -202,3 +210,48 @@ async def translate_video_file(file: UploadFile, target_languages: str, request:
     # os.makedirs("./translations/", exist_ok=True)
 
     return {"message": "Translation completed successfully.", "translated_videos": translated_videos}
+
+    # Launch the Gradio app
+
+""" Gradio definitions """
+
+
+def translate_video(url, target_languages, openAIkey, mistralAIkey, genders):
+ 
+        # Endpoint URL with URL parameters
+    endpoint = f"http://localhost:8081/translate_video_url/?url={url}&target_languages={target_languages}"
+    
+
+    # JSON body
+    json_body = {
+        "openAIkey": openAIkey,
+        "mistralAIkey": mistralAIkey,
+        "genders": genders
+    }
+
+       # Make the POST request
+    response = requests.post(endpoint, json=json_body) 
+
+    # Assuming the response is JSON and contains a message
+    if response.status_code == 200:
+        return response.json()['message']
+    else:
+        return "Error: Could not process the translation request."
+
+  
+
+# Define the Gradio interface
+iface = gr.Interface(fn=translate_video,
+                     inputs=[
+                         gr.Textbox(label="Video URL"),
+                         gr.Textbox(label="Target Languages (comma-separated)"),
+                         gr.Textbox(label="Speaker Genders (comma-separated, e.g., male,female,male)"),
+                         gr.Textbox(label="OpenAI Key"),
+                         gr.Textbox(label="MistralAI Key")],
+                     outputs="text",
+                     title="Video Translator",
+                     description="Translate videos by providing the video URL and target languages.")
+
+
+if __name__ == "__main__":
+    iface.launch()

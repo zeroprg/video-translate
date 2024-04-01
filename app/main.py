@@ -5,6 +5,7 @@ import gradio as gr
 import requests
 
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import json
 
@@ -28,6 +29,7 @@ app = FastAPI()
 # Define empty sessions dictionary
 sessions = {}
 api_keys: Dict[str, Dict[str, str]] = {}
+
 
 import concurrent
 from concurrent.futures import ThreadPoolExecutor
@@ -97,26 +99,25 @@ async def add_api_keys(request: Request):
 async def translate_video_url(url: str, target_languages: str, request: Request):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
     session,_ = get_session(request)
-    openAIkey = request.get("openAIkey", None)
-    mistralAIkey = request.get("mistralAIkey", None)
-    genders = request.get("genders", "male")
-    logger.info(f"openAIkey: {openAIkey} mistralAIkey: {mistralAIkey} genders: {genders}")
+       # Get JSON data from the request
+    json_data = await request.json()
+    
+    # Extract values from JSON body
+    openAIkey = json_data.get("openAIkey", None)
+    mistralAIkey = json_data.get("mistralAIkey", None)
+    genders = json_data.get("genders", "male")  # Default value "male" if not provided
+    
+    logger.info(f"openAIkey: {openAIkey} , mistralAIkey: {mistralAIkey} ,  genders: {genders}")
     speakers = genders.split(',')  # Splitting the input string into a list
-    logger.info("speakers: {speakers}")
+    logger.info(f"genders: {genders}")
     user_id = session.get("user_id", str(uuid.uuid4()))
 
     translated_videos = []
-#TODO uncomment after POSTMAN testing
-#    if user_id not in api_keys:
-#        raise HTTPException(status_code=400, detail="User not found or API keys not configured.")
-
-#    openai_key = api_keys[user_id]["openai_key"]
-#    mistralai_key = api_keys[user_id]["mistralai_key"]
 
     translators = {
-        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": None, "model_name": "davinci"},
+        "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": openAIkey, "model_name": "davinci"},
         "Ollama": {"name": "ollama", "available": True, "function": "translate_text_with_ollama", "api_key": None, "model_name": "llama2"},
-        "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": '***'}
+        "Mistralai": {"name": "mistrali", "available": True, "function": "mistralai_translate_text", "api_key": mistralAIkey}
     }
     
     # Translate target_languages to English
@@ -132,18 +133,15 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 
     video_path = download_video(url)
     audio_path = extract_audio(video_path)
-    #set up the keys
-    translators["OpenAI"]["api_key"] = None if openAIkey =='' else openAIkey
-    translators["Mistralai"]["api_key"] = None if mistralAIkey =='' else mistralAIkey  
     av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0], translators=translators, speakers = speakers)   
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
     filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]
         # Translate the filename text
-    filename_no_extention_trans = translate_text(filename_no_extention, cleaned_languages[0], translators, prompt = None)
+    filename_no_extention_trans = translate_text(filename_no_extention, cleaned_languages[0], translators, prompt = "consider translation no longer then original text")
     # Merge files and Rename the output file with the translated filename 
     translated_video_path = av.merge_video_files(output_filename = f"{filename_no_extention_trans}.mp4")
-    translated_videos.append(translated_video_path)
+    # translated_videos.append(translated_video_path)
 
     # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
     # results will keep 
@@ -162,6 +160,11 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     #shutil.rmtree("./translations/", ignore_errors=True)
     #os.makedirs("./translations/", exist_ok=True)
     """
+        # Return both file and message
+    return {
+        "message": "Translation completed successfully.!",
+        "file": FileResponse(translated_video_path, media_type='application/octet-stream')
+    }
     return {"message": "Translation completed successfully.", "translated_videos": translated_videos}
 
 @app.post("/translate_video_file/")
@@ -217,9 +220,11 @@ async def translate_video_file(file: UploadFile, target_languages: str, request:
 
 
 def translate_video(url, target_languages, openAIkey, mistralAIkey, genders):
- 
+     # Encode URL parameters
+    encoded_url = urllib.parse.quote(url, safe='')
+    encoded_target_languages = urllib.parse.quote(target_languages, safe='')
         # Endpoint URL with URL parameters
-    endpoint = f"http://localhost:8081/translate_video_url/?url={url}&target_languages={target_languages}"
+    endpoint = f"http://localhost:8081/translate_video_url/?url={encoded_url}&target_languages={encoded_target_languages}"
     
 
     # JSON body
@@ -233,10 +238,7 @@ def translate_video(url, target_languages, openAIkey, mistralAIkey, genders):
     response = requests.post(endpoint, json=json_body) 
 
     # Assuming the response is JSON and contains a message
-    if response.status_code == 200:
-        return response.json()['message']
-    else:
-        return "Error: Could not process the translation request."
+    return response
 
   
 
@@ -244,10 +246,11 @@ def translate_video(url, target_languages, openAIkey, mistralAIkey, genders):
 iface = gr.Interface(fn=translate_video,
                      inputs=[
                          gr.Textbox(label="Video URL"),
-                         gr.Textbox(label="Target Languages (comma-separated)"),
-                         gr.Textbox(label="Speaker Genders (comma-separated, e.g., male,female,male)"),
+                         gr.Textbox(label="Target Languages (comma-separated)"),                        
                          gr.Textbox(label="OpenAI Key"),
-                         gr.Textbox(label="MistralAI Key")],
+                         gr.Textbox(label="MistralAI Key"),
+                         gr.Textbox(label="Speaker Genders (comma-separated, e.g., male,female,male)")
+                         ],
                      outputs="text",
                      title="Video Translator",
                      description="Translate videos by providing the video URL and target languages.")

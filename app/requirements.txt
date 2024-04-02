@@ -2,12 +2,14 @@ fastapi
 uvicorn
 pydantic
 openai
+whisper
 mistralai
 gtts
 moviepy
 pydub
 requests
 pytube3
+pyannote
 #Plan to use it in future
 #python-multipart
 #transformers

@@ -16,6 +16,7 @@ def install_pytorch():
     """Install PyTorch with specific CUDA support."""
     subprocess.call(['pip', 'install', 'torch==2.2.1+cu121', '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
     subprocess.call(['pip', 'install', 'torchvision==0.17.1+cu121', '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+    subprocess.call(['pip', 'install', 'torchaudio==2.2.1'])
 
 def check_ffmpeg_installed():
     """Check if ffmpeg is installed on Linux and provide installation instructions if not."""

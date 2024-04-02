@@ -8,10 +8,11 @@ moviepy
 pydub
 requests
 pytube3
-python-multipart
-transformers
+#Plan to use it in future
+#python-multipart
+#transformers
 
-librosa
-speechbrain
+#librosa
+#speechbrain
 
 gradio # for WEB UI 

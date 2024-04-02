@@ -162,7 +162,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     """
         # Return both file and message
     return {
-        "message": "Translation completed successfully.!",
+        "message": "Translation completed successfully! To get the translated video, click the link below (temporary not accessable send eMail to zeroprg@gmail.com).",
         "file": FileResponse(translated_video_path, media_type='application/octet-stream')
     }
     return {"message": "Translation completed successfully.", "translated_videos": translated_videos}

@@ -53,7 +53,7 @@ def merge_segments(diarization_results, gap_threshold=0.92):
             last_turn, last_speaker = current_segment
             # If the current segment is for the same speaker and within the gap threshold,
             # extend the end of the last segment; otherwise, append and start a new segment
-            if speaker == last_speaker or turn.start - last_turn.end <= gap_threshold:
+            if  turn.start - last_turn.end <= gap_threshold: #speaker == last_speaker and
                 # Merge this segment with the current one by extending the end time
                 current_segment = (Segment(start=last_turn.start, end=turn.end), speaker)
                 last_speaker = speaker # Update the speaker for the merged segment
@@ -273,9 +273,9 @@ class AudioVideoTranslator():
 
 if __name__ == "__main__":    
 
-    audio_file_path = "./app//downloads/Истинный Смысл Матрицы. Наука, Религия и Философия в Матрице.wav"
+    audio_file_path = "./app//downloads/Немцы проходят через АД концлагеря и ШТРАФБАТА, через АД русской зимы и КУРСКОЙ БИТВЫ [пересказ].wav"
     
-    video_file_path = "./app/downloads/Истинный Смысл Матрицы. Наука, Религия и Философия в Матрице.mp4"
+    video_file_path = "./app/downloads/Немцы проходят через АД концлагеря и ШТРАФБАТА, через АД русской зимы и КУРСКОЙ БИТВЫ [пересказ].mp4"
 
     av = AudioVideoTranslator(audio_file_path,video_file_path, output_folder="app/translations")
 

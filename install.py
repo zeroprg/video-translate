@@ -10,13 +10,13 @@ def upgrade_pip_and_setuptools():
 
 def install_requirements():
     """Install packages from a requirements.txt file."""
-    subprocess.call(['pip', 'install', '-r', './app/requirements.txt'])
+    subprocess.call(['pip', 'install','--no-cache-dir', '-r', './app/requirements.txt'])
 
 def install_pytorch():
     """Install PyTorch with specific CUDA support."""
     subprocess.call(['pip', 'install', 'torch==2.2.1+cu121', '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
     subprocess.call(['pip', 'install', 'torchvision==0.17.1+cu121', '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
-    subprocess.call(['pip', 'install', 'torchaudio==2.2.1'])
+    subprocess.call(['pip', 'install', 'torchaudio==2.2.1, gradio'])
 
 def check_ffmpeg_installed():
     """Check if ffmpeg is installed on Linux and provide installation instructions if not."""
@@ -44,15 +44,13 @@ if __name__ == '__main__':
     print("Checking if ffmpeg is installed on Linux...")
     check_ffmpeg_installed()
 
-    print("Installing PyTorch and PyTorchVision  with CUDA 12.1 support...")
-    install_pytorch()
 
     print("Installing requirements from requirements.txt...")
     install_requirements()
-        
 
-    
- 
-    
+    print("Installing PyTorch and PyTorchVision  with CUDA 12.1 support...")
+    install_pytorch()
+
+       
     print("Checking Python bit version...")
     check_python_bit_version()

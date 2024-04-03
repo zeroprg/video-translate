@@ -9,12 +9,7 @@ moviepy
 pydub
 requests
 pytube3
-pyannote
-#Plan to use it in future
-#python-multipart
-#transformers
-
-#librosa
-#speechbrain
-
-gradio # for WEB UI 
+pyannote.audio
+pyannote.core
+gradio
+ # for WEB UI 

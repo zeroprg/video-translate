@@ -3,6 +3,7 @@ import os
 import shutil
 import gradio as gr
 import requests
+import urllib
 
 from fastapi import FastAPI, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse

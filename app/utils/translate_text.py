@@ -37,7 +37,7 @@ def translate_text_with_ollama(source_text, target_language, api_key = None, pro
     if prompt:
         translation_prompt = f"Translate the following text from original language to [{target_language}] Textto betranslated: [{source_text}] ,{prompt}"
     else:
-        translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags to guide the tone of the translated speech. Text to be translated:[{source_text}]"
+        translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags in format [emotion1,emotion2] to guide the tone of the translated speech. Text to be translated:[{source_text}]"
 
 
 
@@ -87,7 +87,7 @@ def openai_translate_text(source_text, target_language, api_key, prompt=None):
         if prompt:            
             translation_prompt = f"Translate the following text from original language to [{target_language}] Textto betranslated: [{source_text}] ,{prompt}"
         else:
-            translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags to guide the tone of the translated speech. Text to be translated:[{source_text}]"
+            translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags format [emotion1,emotion2] to guide the tone of the translated speech. Text to be translated:[{source_text}]"
 
 
         # Make the API call using the client
@@ -120,7 +120,7 @@ def mistralai_translate_text(source_text, target_language, api_key, prompt=None)
         if prompt:
             translation_prompt = f"Translate the following text from original language to [{target_language}] Textto betranslated: [{source_text}] ,{prompt}"
         else:
-            translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags to guide the tone of the translated speech. Text to be translated:[{source_text}]"
+            translation_prompt = f"Translate the following text from original language to [{target_language}] while conveying the appropriate emotional tone. Use emotion tags format [emotion1,emotion2] to guide the tone of the translated speech. Text to be translated:[{source_text}]"
 
 
         messages = [

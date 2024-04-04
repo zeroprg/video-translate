@@ -273,9 +273,9 @@ class AudioVideoTranslator():
 
 if __name__ == "__main__":    
 
-    audio_file_path = "./app//downloads/Немцы проходят через АД концлагеря и ШТРАФБАТА, через АД русской зимы и КУРСКОЙ БИТВЫ [пересказ].wav"
+    audio_file_path = "./app//downloads/Бог предупреждает Америку  Таинственное знамение конца.wav"
     
-    video_file_path = "./app/downloads/Немцы проходят через АД концлагеря и ШТРАФБАТА, через АД русской зимы и КУРСКОЙ БИТВЫ [пересказ].mp4"
+    video_file_path = "./app/downloads/Бог предупреждает Америку  Таинственное знамение конца.mp4"
 
     av = AudioVideoTranslator(audio_file_path,video_file_path, output_folder="app/translations")
 

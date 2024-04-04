@@ -35,6 +35,13 @@ api_keys: Dict[str, Dict[str, str]] = {}
 import concurrent
 from concurrent.futures import ThreadPoolExecutor
 
+# Get the path to the downloads folder from the environment variable
+download_folder = os.environ.get("DOWNLOAD_FOLDER", "./downloads")
+# Get the path to the translations folder from the environment variable
+translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
+
+
+
 # Pass the pattern to executor like this : r"_(\d+)-(\d+)_(\d+)\.wav$"
 def execute_files(file_paths, execution_function, pattern, max_workers=2):
     # Pattern to extract start time from filename
@@ -132,9 +139,9 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     if not cleaned_languages:
         raise HTTPException(status_code=400, detail="No meaningful target languages found.")
 
-    video_path = download_video(url)
-    audio_path = extract_audio(video_path)
-    av = AudioVideoTranslator(audio_path, video_path, output_folder="./translations", lang = cleaned_languages[0], translators=translators, speakers = speakers)   
+    video_path = download_video(url, output_path=download_folder)
+    audio_path = extract_audio(video_path, output_path=download_folder)
+    av = AudioVideoTranslator(audio_path, video_path, output_folder=translations_folder, lang = cleaned_languages[0], translators=translators, speakers = speakers)   
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
     filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]
@@ -146,7 +153,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
 
     # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
     # results will keep 
-    #results = execute_files(".\downloads", transcribe_audio , r"_(\d+)-(\d+)_(\d+)\.wav$")
+    #results = execute_files(download_folder, transcribe_audio , r"_(\d+)-(\d+)_(\d+)\.wav$")
     #transcription = transcribe_audio(audio_path)
 
     """
@@ -158,8 +165,8 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
         translated_videos.append(translated_video_path)
 
-    #shutil.rmtree("./translations/", ignore_errors=True)
-    #os.makedirs("./translations/", exist_ok=True)
+    #shutil.rmtree(translations_folder, ignore_errors=True)
+    #os.makedirs(translations_folder, exist_ok=True)
     """
         # Return both file and message
     return {
@@ -193,13 +200,13 @@ async def translate_video_file(file: UploadFile, target_languages: str, request:
     video_path = download_video(file)
     audio_path = extract_audio(video_path)
 
-    av = AudioVideoTranslator(audio_path, video_path, output_folder="downloads")
+    av = AudioVideoTranslator(audio_path, video_path, output_folder= download_folder)
    
     print("Input media:", audio_path, video_path)
     av._perform_audio_diarization()
     # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
     # results will keep 
-    results = execute_files(".\downloads", r"_(\d+)-(\d+)_(\d+)\.wav$", transcribe_audio)
+    results = execute_files(download_folder, r"_(\d+)-(\d+)_(\d+)\.wav$", transcribe_audio)
     #transcription = transcribe_audio(audio_path)
 
     translated_videos = []
@@ -210,8 +217,8 @@ async def translate_video_file(file: UploadFile, target_languages: str, request:
         translated_video_path = replace_original_audio(video_path, translated_audio_path)
         translated_videos.append(translated_video_path)
 
-    # shutil.rmtree("./translations/", ignore_errors=True)
-    # os.makedirs("./translations/", exist_ok=True)
+    # shutil.rmtree(translations_folder, ignore_errors=True)
+    # os.makedirs(translations_folder, exist_ok=True)
 
     return {"message": "Translation completed successfully.", "translated_videos": translated_videos}
 
@@ -257,5 +264,7 @@ iface = gr.Interface(fn=translate_video,
                      description="Translate videos by providing the video URL and target languages.")
 
 
-if __name__ == "__main__":
-    iface.launch()
+if __name__ == "__main__":    
+    files = os.listdir(download_folder)
+    print("Files in downloads folder:", files)
+    iface.launch(share=True)

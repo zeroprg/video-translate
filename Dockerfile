@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM tiangolo/uvicorn-gunicorn:python3.11 as base
+FROM tiangolo/uvicorn-gunicorn:python3.10 as base
 
 # Set the working directory in the container to /app
 WORKDIR /app

@@ -78,7 +78,7 @@ def download_youtube_video(url, output_path='downloads'):
             return video_path
 
     except Exception as e:
-        logger.error(f"Error downloading YouTube video: {e}")
+        logger.error(f"Error downloading YouTube video: {url} : {e}")
         return None
 
 
@@ -105,9 +105,9 @@ def download_file(url, output_path='downloads'):
 
 def download_video(url, output_path='downloads'):
     if is_youtube_url(url):
-        return download_youtube_video(url, output_path)
+        return download_youtube_video(url, output_path = output_path)
     else:
-        return download_file(url, output_path)
+        return download_file(url, output_path = output_path)
 
 # Example usage
 if __name__ == "__main__":

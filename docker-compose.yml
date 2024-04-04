@@ -5,6 +5,12 @@ services:
     ports:
       - "7860:7860"
       - "8081:8081"
+    volumes:
+      - ./app/downloads:/app/downloads
+      - ./app/translations:/app/translations  
+    environment:
+      - DOWNLOAD_FOLDER=/app/downloads
+      - TRANSLATIONS_FOLDER=/app/translate
     networks:
       - my-network
 networks:

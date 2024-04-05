@@ -1,7 +1,3 @@
-translations
-downloads
-flagged
-
 app/venv
 **/__pycache__
 **/*.pyc

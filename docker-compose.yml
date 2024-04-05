@@ -12,6 +12,8 @@ services:
       - LANG=C.UTF-8 
       - DOWNLOAD_FOLDER=/app/downloads
       - TRANSLATIONS_FOLDER=/app/translations
+      - OLLAMA_URL=http://ollama:11434
+      - TTS_URL=http://tts:8000
     networks:
       - my-network
 

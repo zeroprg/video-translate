@@ -1,7 +1,7 @@
 # main.py
 import os
 import shutil
-import gradio as gr
+#import gradio as gr
 import requests
 import urllib
 
@@ -249,7 +249,7 @@ def translate_video(url, target_languages, openAIkey, mistralAIkey, genders):
     return response
 
   
-
+"""
 # Define the Gradio interface
 iface = gr.Interface(fn=translate_video,
                      inputs=[
@@ -262,9 +262,9 @@ iface = gr.Interface(fn=translate_video,
                      outputs="text",
                      title="Video Translator",
                      description="Translate videos by providing the video URL and target languages.")
-
+"""
 
 if __name__ == "__main__":    
     files = os.listdir(download_folder)
     print("Files in downloads folder:", files)
-    iface.launch(share=False)
+    #iface.launch(share=False)

@@ -13,7 +13,7 @@ services:
       - DOWNLOAD_FOLDER=/app/downloads
       - TRANSLATIONS_FOLDER=/app/translations
       - OLLAMA_URL=http://ollama:11434
-      - TTS_URL=http://tts:8000
+      - TTS_URL=http://openedai-speech:8000
     networks:
       - my-network
 
@@ -23,6 +23,24 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - my-network
+
+  openedai-speech:
+    build:
+      context: ../openedai-speech  # Adjust if necessary to point to the directory containing the Dockerfile
+      dockerfile: Dockerfile  # Or Dockerfile.min, depending on your requirements
+    stdin_open: true
+    tty: true
+    ports:
+      - "8000:8000"
     deploy:
       resources:
         reservations:

@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   video-translator:
-    image: video-translator
+    image: zeroprg/video-translator
     ports:
       - "7860:7860"
       - "8081:8081"
@@ -9,8 +9,9 @@ services:
       - ./app/downloads:/app/downloads
       - ./app/translations:/app/translations  
     environment:
+      - LANG=C.UTF-8 
       - DOWNLOAD_FOLDER=/app/downloads
-      - TRANSLATIONS_FOLDER=/app/translate
+      - TRANSLATIONS_FOLDER=/app/translations
     networks:
       - my-network
 networks:

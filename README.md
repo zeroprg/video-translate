@@ -1,3 +1,9 @@
+---
+title: video-translator
+app_file: app/main.py
+sdk: gradio
+sdk_version: 4.24.0
+---
 # Multilingual Text-to-Speech API with OpenAI, MistralAI, and Media Processing
 
 A Python FastAPI application using:

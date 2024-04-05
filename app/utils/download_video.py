@@ -51,35 +51,28 @@ def is_youtube_url(url):
     return youtube_regex_match is not None
 
 def download_youtube_video(url, output_path='downloads'):
-    try:
-        # Ensure the output directory exists
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        
-        # Create a YouTube object
-        youtube = YouTube(url)
-        
-        # Get the first available video stream
-        video_stream = youtube.streams.first()
-        
-        # Sanitize the video title for use as a filename
-        video_title = sanitize_filename(youtube.title)
-        
-        # Construct the full path where the video will be saved
-        video_filename = f"{video_title}.mp4"
-        video_path = os.path.join(output_path, video_filename)
-        
-        # Download the video if it does not exist already
-        if not os.path.isfile(video_path):
-            video_stream.download(output_path=output_path, filename=video_filename)
-            return video_path
-        else:
-            logger.info(f"Video already exists: {video_path}")
-            return video_path
+    logger.info(f"Downloading YouTube video from URL: {url}, output_path: {output_path} ")
+    # Create a YouTube object
+    youtube = YouTube(url)
+    
+    # Get the first available video stream
+    video_stream = youtube.streams.first()
+    
+    # Sanitize the video title for use as a filename
+    video_title = sanitize_filename(youtube.title)
+    
+    # Construct the full path where the video will be saved
+    video_filename = f"{video_title}.mp4"
+    video_path = os.path.join(output_path, video_filename)
+    
+    # Download the video if it does not exist already
+    if not os.path.isfile(video_path):
+        video_stream.download(output_path=output_path, filename=video_filename)
+        return video_path
+    else:
+        logger.info(f"Video already exists: {video_path}")
+        return video_path
 
-    except Exception as e:
-        logger.error(f"Error downloading YouTube video: {url} : {e}")
-        return None
 
 
 def download_file(url, output_path='downloads'):

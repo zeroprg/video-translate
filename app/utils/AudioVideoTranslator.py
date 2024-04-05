@@ -256,7 +256,7 @@ class AudioVideoTranslator():
                
             final_clip.write_videofile(os.path.join(self.output_folder, output_filename))
             print("File saved to {output_filename}") 
-        """    
+           
         try:
             # Delete all files matching the video and audio patterns for cleanup
             for pattern in [video_pattern, audio_pattern]:
@@ -266,16 +266,16 @@ class AudioVideoTranslator():
                         print(f"Deleted {file}")
         except Exception as e:          
             print(f"Error deleting files: {e}")
-        """        
+                
         return  output_filename           
  
 
 
 if __name__ == "__main__":    
 
-    audio_file_path = "./app//downloads/Бог предупреждает Америку  Таинственное знамение конца.wav"
+    audio_file_path = "./app/downloads/Самый секретный прием Умной Молитвы.wav"
     
-    video_file_path = "./app/downloads/Бог предупреждает Америку  Таинственное знамение конца.mp4"
+    video_file_path = "./app/downloads/Самый секретный прием Умной Молитвы.mp4"
 
     av = AudioVideoTranslator(audio_file_path,video_file_path, output_folder="app/translations")
 

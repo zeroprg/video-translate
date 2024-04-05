@@ -107,6 +107,7 @@ async def add_api_keys(request: Request):
 async def translate_video_url(url: str, target_languages: str, request: Request):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
     session,_ = get_session(request)
+    logger.info(f"request: {request}")
        # Get JSON data from the request
     json_data = await request.json()
     
@@ -267,4 +268,4 @@ iface = gr.Interface(fn=translate_video,
 if __name__ == "__main__":    
     files = os.listdir(download_folder)
     print("Files in downloads folder:", files)
-    iface.launch(share=True)
+    iface.launch(share=False)

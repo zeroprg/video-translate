@@ -9,6 +9,10 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Set log level if needed
 
+
+# Get the path to the translations folder from the environment variable
+translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
+
 def synthesize_audio(translated_text, target_language, translations="translations", simulate_male_voice=False):
     LANGUAGES = {
         "Afrikaans": "af",
@@ -150,12 +154,13 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
     male_voices = ["fable", "echo", "onyx"]
     female_voices = [ "alloy","nova" , "shimmer"] 
 
+    local_url = os.environ.get("TTS_URL", "localhost:8000")
 
     if output_file_path is None:
-        audio_filename = os.path.join("./translations", f"translated_audio_{target_language}.mp3")
+        audio_filename = os.path.join(translations_folder, f"translated_audio_{target_language}.mp3")
     else:
         # open as file with OS library
-        audio_filename = os.path.join("./translations",output_file_path)
+        audio_filename = os.path.join(translations_folder,output_file_path)
 
     try:
         # Initialize the OpenAI client
@@ -165,7 +170,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
             # export OPENAI_API_KEY=sk-11111111111
             # export OPENAI_BASE_URL=http://localhost:8000/v1
                             api_key = "sk-111111111",
-                            base_url = "http://localhost:8000/v1",
+                            base_url = f"http://{local_url}/v1",
                             )
         else:                    
             client = OpenAI(api_key=api_key)

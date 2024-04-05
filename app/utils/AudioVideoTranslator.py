@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)  # This assumes the logger is defined in '_
 
 from pyannote.core import Segment
 
+# Get the path to the translations folder from the environment variable
+translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
+
 #Example of default translators
 translators = {
     "OpenAI": {"name": "openai", "available": True, "function": "openai_translate_text", "api_key": None, "model_name": "davinci"},
@@ -72,7 +75,7 @@ def merge_segments(diarization_results, gap_threshold=0.92):
 
 
 class AudioVideoTranslator():
-    def __init__(self, input_audio_path, input_video_path=None, output_folder="./translations" , lang = "English", speakers = ["male","male"], translators = translators): #default 2 male speakers
+    def __init__(self, input_audio_path, input_video_path=None, output_folder=translations_folder , lang = "English", speakers = ["male","male"], translators = translators): #default 2 male speakers
         self.threads = threading.Semaphore(1)
         self.speakers = speakers
         self.translators = translators

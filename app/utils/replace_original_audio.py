@@ -5,6 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Set log level if needed
 
+translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
+
 def split_audio_into_chunks(audio_clip, chunk_duration, video_duration):
     """
     Split the audio clip into chunks of specified duration.
@@ -28,7 +30,7 @@ def split_audio_into_chunks(audio_clip, chunk_duration, video_duration):
         chunks.append(chunk)
     return chunks
 
-def replace_original_audio_intime_range(video_clip, audio, start_time, end_time, output_file = "./translations/temp.mp4"):
+def replace_original_audio_intime_range(video_clip, audio, start_time, end_time, output_file = f"{translations_folder}/temp.mp4"):
     """
     Replace the audio of the video clip with the audio from the given path
     for the specified time range and save the result to the output path.

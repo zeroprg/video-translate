@@ -29,8 +29,8 @@ def translate_text_with_ollama(source_text, target_language, api_key = None, pro
     Returns:
         str: The translated text or None if an error occurs.
     """
-
-    ollama_url = "http://localhost:11434/api/chat"  # Replace this URL with the actual Ollama instance's URL
+    local_url = os.environ.get("OLLAMA_URL", "localhost:11434")
+    ollama_url = f"http://{local_url}/api/chat"  # Replace this URL with the actual Ollama instance's URL
     #ollama_url = "http://localhost:11434/api/completion"
     logging(source_text, target_language, api_key, prompt)
     # Construct the translation prompt

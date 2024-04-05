@@ -107,7 +107,6 @@ async def add_api_keys(request: Request):
 async def translate_video_url(url: str, target_languages: str, request: Request):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
     session,_ = get_session(request)
-    logger.info(f"request: {request}")
        # Get JSON data from the request
     json_data = await request.json()
     

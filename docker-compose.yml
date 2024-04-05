@@ -14,6 +14,26 @@ services:
       - TRANSLATIONS_FOLDER=/app/translations
     networks:
       - my-network
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - my-network
+
 networks:
   my-network:
     driver: bridge
+
+volumes:
+  ollama:

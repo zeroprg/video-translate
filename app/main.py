@@ -38,8 +38,8 @@ from concurrent.futures import ThreadPoolExecutor
 # Get the path to the downloads folder from the environment variable
 download_folder = os.environ.get("DOWNLOAD_FOLDER", "./downloads")
 # Get the path to the translations folder from the environment variable
-translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
-
+videos_dir = translations_folder = os.environ.get("TRANSLATIONS_FOLDER", "./translations")
+base_file_url = os.environ.get("VIDEO_BASE_URL", "localhost:8081/videos/")
 
 
 # Pass the pattern to executor like this : r"_(\d+)-(\d+)_(\d+)\.wav$"
@@ -103,6 +103,16 @@ async def add_api_keys(request: Request):
     else:
         raise HTTPException(status_code=400, detail="Invalid API key data")
 
+
+@app.get("/videos/{filename}")
+async def get_video(filename: str):
+    video_path = os.path.join(videos_dir, filename)
+    if not os.path.isfile(video_path):
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(video_path)
+def generate_video_urls(video_filenames):
+    return [base_file_url + filename for filename in video_filenames]
+
 @app.post("/translate_video_url/")
 async def translate_video_url(url: str, target_languages: str, request: Request):
     logger.info(f"/translate_video_url/ endpoint ,url: {url} target_languages: {target_languages}")
@@ -147,15 +157,11 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
     filename_no_extention = os.path.splitext(os.path.basename(video_path))[0]
         # Translate the filename text
     filename_no_extention_trans = translate_text(filename_no_extention, cleaned_languages[0], translators, prompt = "consider translation no longer then original text")
+    if filename_no_extention_trans is None:
+         return {"message": "Translation failed due to missing valid translators or API keys."}
     # Merge files and Rename the output file with the translated filename 
     translated_video_path = av.merge_video_files(output_filename = f"{filename_no_extention_trans}.mp4")
-    # translated_videos.append(translated_video_path)
-
-    # transcribe_audio(audio_path) where audio_path is the path to the audio file follw this pattern r"_(\d+)-(\d+)_(\d+)\.wav$"
-    # results will keep 
-    #results = execute_files(download_folder, transcribe_audio , r"_(\d+)-(\d+)_(\d+)\.wav$")
-    #transcription = transcribe_audio(audio_path)
-
+    
     """
     for lang in cleaned_languages:
       for filename,transcription in results.items():
@@ -173,7 +179,7 @@ async def translate_video_url(url: str, target_languages: str, request: Request)
         "message": "Translation completed successfully! To get the translated video, click the link below (temporary not accessable send eMail to zeroprg@gmail.com).",
         "file": FileResponse(translated_video_path, media_type='application/octet-stream')
     }
-    return {"message": "Translation completed successfully.", "translated_videos": translated_videos}
+    return {"message": "Translation completed successfully.", "translated_videos": generate_video_urls([ f"{filename_no_extention_trans}.mp4", f"{filename_no_extention}.txt"])}
 
 @app.post("/translate_video_file/")
 async def translate_video_file(file: UploadFile, target_languages: str, request: Request):

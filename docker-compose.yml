@@ -23,6 +23,9 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    environment:
+      - MODEL_NAME=llama2  # Assuming Ollama uses an environment variable to select the model
+  
     deploy:
       resources:
         reservations:

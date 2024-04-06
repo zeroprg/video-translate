@@ -41,7 +41,7 @@ def extract_speaker_index(speaker):
     return int(match.group(1)) if match else 0
 
 
-def merge_segments(diarization_results, gap_threshold=0.92):
+def merge_segments(diarization_results, gap_threshold = 1.5):
     print("Merging segments...")
     merged_segments = []
     current_segment = None

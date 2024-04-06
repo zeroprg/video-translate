@@ -154,7 +154,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
     male_voices = ["fable", "echo", "onyx"]
     female_voices = [ "alloy","nova" , "shimmer"] 
 
-    local_url = os.environ.get("TTS_URL", "localhost:8000")
+    local_url = os.environ.get("TTS_URL", None)
 
     if output_file_path is None:
         audio_filename = os.path.join(translations_folder, f"translated_audio_{target_language}.mp3")
@@ -164,7 +164,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
 
     try:
         # Initialize the OpenAI client
-        if api_key is None : 
+        if local_url is not None : 
                 client = OpenAI(
             # This part is not needed if you set these environment variables before import openai
             # export OPENAI_API_KEY=sk-11111111111

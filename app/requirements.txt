@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pydantic
+openai
+whisper
+mistralai
+gtts
+moviepy
+pydub
+requests
+pytube3
+pyannote.audio
+pyannote.core
+python-multipart
+#gradio
+ # for WEB UI 

@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the start.sh script and make it executable
 COPY app /app
-RUN chmod +x /app/start.sh
+#RUN chmod +x /app/start.sh
 
 # Add the current directory contents into the container at /app
 ADD . /app
@@ -18,5 +18,6 @@ EXPOSE 7860 8081
 RUN python install.py
 
 # Run the start.sh script when the container launches
-CMD ["./start.sh"]
+#CMD ["./start.sh"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8081"]
 

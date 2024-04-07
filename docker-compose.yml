@@ -12,29 +12,31 @@ services:
       - LANG=C.UTF-8 
       - DOWNLOAD_FOLDER=/app/downloads
       - TRANSLATIONS_FOLDER=/app/translations
-      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_URL=http://localhost:11434
       - TTS_URL=http://openedai-speech:8000
     networks:
       - my-network
+    network_mode: host
 
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama:/root/.ollama
-    environment:
-      - MODEL_NAME=llama2  # Assuming Ollama uses an environment variable to select the model
+#
+#  ollama:
+#    image: ollama/ollama
+#    ports:
+#      - "11434:11434"
+#    volumes:
+#      - ollama:/root/.ollama
+#    environment:
+#      - MODEL_NAME=llama2  # Assuming Ollama uses an environment variable to select the model
   
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    networks:
-      - my-network
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [gpu]
+#    networks:
+#      - my-network
 
   openedai-speech:
     build:
@@ -58,5 +60,5 @@ networks:
   my-network:
     driver: bridge
 
-volumes:
-  ollama:
+#volumes:
+#  ollama:

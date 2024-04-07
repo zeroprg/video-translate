@@ -18,7 +18,7 @@ logger.setLevel(logging.DEBUG) #Set log level if needed
 pattern = r'The text is written in (\w+) and translates to (\w+):'
 
 
-def translate_text_with_ollama(source_text, target_language, api_key = None, prompt = None , model="llama2", emotions=None):
+def translate_text_with_ollama(source_text, target_language, api_key = None, prompt = None , model="mistral", emotions=None):
     """
     Translates a given text using the Mistral model from Ollama.
 

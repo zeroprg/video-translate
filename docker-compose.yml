@@ -13,7 +13,7 @@ services:
       - DOWNLOAD_FOLDER=/app/downloads
       - TRANSLATIONS_FOLDER=/app/translations
       - OLLAMA_URL=http://localhost:11434
-      - TTS_URL=http://openedai-speech:8000
+      - TTS_URL=http://localhost:8000
     #networks:
     # - my-network
     network_mode: host

@@ -132,8 +132,17 @@ class AudioVideoTranslator():
             return    
         # Transcribe the audio segment        
         transcribed_text = transcribe_audio(output_path)
-        # Translate the transcribed text
-        translated_text = translate_text(transcribed_text, self.lang, self.translators, prompt = None, audio_path = output_path )
+        #Check if the file exists
+        translated_filename = f"{filename_no_extention} {self.lang}.txt"
+        translated_filename = os.path.join(self.output_folder,translated_filename)
+        print(f"Translated filename : {translated_filename}")
+        if not os.path.exists(os.path.abspath(translated_filename)):        
+              # Translate the transcribed text  
+            translated_text = translate_text(transcribed_text, self.lang, self.translators, prompt = None, audio_path = output_path )
+        else:            
+            with open(translated_filename, "r", encoding="utf-8") as text_file:
+                translated_text = text_file.read()
+
         if translated_text is None:
                 return {"message": "Translation failed due to missing valid translators or API keys."}
 

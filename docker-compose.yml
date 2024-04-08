@@ -14,8 +14,8 @@ services:
       - TRANSLATIONS_FOLDER=/app/translations
       - OLLAMA_URL=http://localhost:11434
       - TTS_URL=http://openedai-speech:8000
-    networks:
-      - my-network
+    #networks:
+    # - my-network
     network_mode: host
 
 #
@@ -53,12 +53,13 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    networks:
-      - my-network
+    #networks:
+    #  - my-network
+    network_mode: host      
 
-networks:
-  my-network:
-    driver: bridge
+#networks:
+#  my-network:
+#    driver: bridge
 
 #volumes:
 #  ollama:

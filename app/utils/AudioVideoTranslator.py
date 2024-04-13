@@ -56,7 +56,7 @@ def merge_segments(diarization_results, gap_threshold = 1.5):
             last_turn, last_speaker = current_segment
             # If the current segment is for the same speaker and within the gap threshold,
             # extend the end of the last segment; otherwise, append and start a new segment
-            if  last_turn.end - last_turn.start <= gap_threshold: #speaker == last_speaker and
+            if  speaker == last_speaker: #and last_turn.end - last_turn.start <= gap_threshold: 
                 # Merge this segment with the current one by extending the end time
                 current_segment = (Segment(start=last_turn.start, end=turn.end), speaker)
                 last_speaker = speaker # Update the speaker for the merged segment
@@ -175,7 +175,7 @@ class AudioVideoTranslator():
     def _perform_audio_diarization(self):
         # to perform duarization when audio is longer than 1 minute or more than 1 speaker
         print("Performing speaker diarization...")
-        if len(self.speakers) > 1 : 
+        if self.audio_clip.duration > 299: 
             waveform, sample_rate = torchaudio.load(self.input_audio_path)
             diarization = self.pipeline({"waveform": waveform, "sample_rate": sample_rate})
             segmentation_indices = diarization.itertracks(yield_label=True)

@@ -173,14 +173,13 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
                             base_url = f"http://{local_url}/v1",
                             )
                             
-                speed = 0.97 if simulate_male_voice else 0.67
+                speed = 0.92 if simulate_male_voice else 0.89
         else:                    
             client = OpenAI(api_key=api_key)
             speed = 1.0
 
         # Set model parameter based on the target language
-        model = 'tts-1'  # Adjust the model based on your preference
-        logger.info(f"simulate_male_voice: {simulate_male_voice} , speaker: {speaker}")
+        model = 'tts-1-hd'  # Adjust the model based on your preference tts-1-hd        logger.info(f"simulate_male_voice: {simulate_male_voice} , speaker: {speaker}")
         # Set voice parameter based on voice type
         voice = male_voices[speaker % 4] if simulate_male_voice else female_voices[speaker % 2]  # Male voice if simulate_male_voice is True, else female voice
         logger.info(f"voice: {voice}")

@@ -97,6 +97,7 @@ def download_file(url, output_path='downloads'):
         return None
 
 def download_video(url, output_path='downloads'):
+    logger.info(f"Downloading video from URL: {url}, output_path: {output_path}")
     if is_youtube_url(url):
         return download_youtube_video(url, output_path = output_path)
     else:

@@ -173,7 +173,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
                             base_url = f"http://{local_url}/v1",
                             )
                             
-                speed = 0.92 if simulate_male_voice else 0.89
+                speed = 1.0 if simulate_male_voice else 0.95
         else:                    
             client = OpenAI(api_key=api_key)
             speed = 1.0
@@ -193,7 +193,7 @@ def synthesize_audio_openai(translated_text, target_language, output_file_path=N
             chunk_with_pause = insert_pause(chunk)
 
 
-            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause, speed=speed)
+            response = client.audio.speech.create(model=model, voice=voice, input=chunk_with_pause)
             audio_chunks.append(response.content)
 
         # Save the synthesized speech to an MP3 file

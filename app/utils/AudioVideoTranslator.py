@@ -175,7 +175,7 @@ class AudioVideoTranslator():
     def _perform_audio_diarization(self):
         # to perform duarization when audio is longer than 1 minute or more than 1 speaker
         print("Performing speaker diarization...")
-        if self.audio_clip.duration > 299: 
+        if self.audio_clip.duration > 699:
             waveform, sample_rate = torchaudio.load(self.input_audio_path)
             diarization = self.pipeline({"waveform": waveform, "sample_rate": sample_rate})
             segmentation_indices = diarization.itertracks(yield_label=True)
@@ -227,7 +227,7 @@ class AudioVideoTranslator():
     """
 
     def _save_segments(self, merged_segments):
-        logger.info("Saving extracted speech segments...")
+        logger.info("Saving extracted speech segments")
         merged_segments = merge_segments(merged_segments)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:            
@@ -240,9 +240,9 @@ class AudioVideoTranslator():
 
 
     def merge_video_files(self , output_filename = None):
-        print(f"Merging video files in self.output_folder: {self.output_folder} / output_filename: {output_filename}...")
+        print(f"Merging video files in self.output_folder: {self.output_folder}/output_filename: {output_filename}")
 
-        print(f"Merging video files in {self.output_folder} / {output_filename}...")
+        print(f"Merging video files in {self.output_folder} / {output_filename}")
         video_pattern = re.compile(r"(\d+\.\d+|\d+)_(\d+)\.mp4$")
         audio_pattern = re.compile(r"(\d+\.\d+|\d+)_(\d+)\.wav$")
         #text_pattern =  re.compile(r"(\d+\.\d+|\d+)_(\d+)\.txt$")
@@ -258,6 +258,8 @@ class AudioVideoTranslator():
             output_filename = f"{os.path.splitext(os.path.basename(self.input_video_path))[0]}(trans).mp4"
         else:
             output_filename = output_filename.replace("..mp4", ".mp4")
+            # Assuming output_filename contains the filename string
+        #output_filename = re.sub(r'[^\w.]+', '', output_filename)
         if not filtered_files:
             print("No matching video files were found.")
         elif len(filtered_files) == 1:
@@ -291,9 +293,9 @@ class AudioVideoTranslator():
 
 if __name__ == "__main__":    
 
-    audio_file_path = "./app/downloads/Самый секретный прием Умной Молитвы.wav"
+    audio_file_path = "./app/downloads/Герман Стерлигов крестьянство бизнес и власть.wav"
     
-    video_file_path = "./app/downloads/Самый секретный прием Умной Молитвы.mp4"
+    video_file_path = "./app/downloads/Герман Стерлигов крестьянство бизнес и власть.mp4"
 
     av = AudioVideoTranslator(audio_file_path,video_file_path, output_folder="app/translations")
 
